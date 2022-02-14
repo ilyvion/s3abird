@@ -7,7 +7,10 @@
         <th scope="row">{{ email.from.text }}</th>
       </tr>
       <tr>
-        <td scope="row"><span class="text-secondary">to</span> {{ email.to.text }}</td>
+        <td scope="row"><span class="text-secondary">to</span> {{ email.to ? email.to.text : '' }}</td>
+      </tr>
+      <tr>
+        <td scope="row"><span class="text-secondary">cc</span> {{ email.cc ? email.cc.text : '' }}</td>
       </tr>
       <tr>
         <td scope="row">

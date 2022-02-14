@@ -1,6 +1,7 @@
 *~
 *#
 .tern*
-
+.idea/
+yarn.lock
 public/
 node_modules/
