@@ -5,9 +5,13 @@
     <div class="row justify-content-center">
       <div class="mt-2 col col-sm-9 col-md-10">
         <div class="bg-light rounded px-3 py-2">
-          <keep-alive include="EmailList">
-            <router-view></router-view>
-          </keep-alive>
+            <router-view v-slot="{ Component }">
+                <keep-alive include="EmailList">
+                    <transition name="fade" mode="out-in">
+                        <component :is="Component" />
+                    </transition>
+                </keep-alive>
+            </router-view>
         </div>
       </div>
     </div>
@@ -46,5 +50,18 @@ footer {
         color: inherit;
         text-decoration: none;
     }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+.fade-enter-to,
+.fade-leave-from {
+  opacity: 1;
 }
 </style>

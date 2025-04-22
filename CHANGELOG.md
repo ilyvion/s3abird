@@ -13,12 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Switched from `mailparser` to `postal-mime`, including custom CID inlining and text-to-HTML fallback logic.
 -   Replaced `aws-sdk` v2 and `bluebird` with `@aws-sdk/client-s3` (modular v3) and native Promises.
 -   Updated all code to use `import/export` instead of `require/module.exports`.
+-   Migrated from Vue 2 to Vue 3, including `vue-router` and `vuex`
+-   Updated all Vue app initialization code to use `createApp`, `createRouter`, and `createStore` per Vue 3 standards
+-   Replaced Vue 2-style `<router-view>` usage with scoped slot + `<component :is="...">` to support `<keep-alive>` and `<transition>` properly
 
 ### Removed
 
 -   Gulp build chain: `gulpfile.js`, `browserify`, `vueify`, `node-sass`, and associated plugins.
 -   Legacy email parsing dependency: `mailparser`
 -   Unused/obsolete dev dependencies: `connect-history-api-fallback`, `bluebird`, and others.
+-   Removed global `Vue.use(...)` calls (no longer used in Vue 3)
 
 ### Added
 

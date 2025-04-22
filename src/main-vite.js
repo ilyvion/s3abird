@@ -1,5 +1,5 @@
-import Vue from "vue";
-import VueRouter from "vue-router";
+import { createApp } from "vue";
+import { createRouter, createWebHistory } from "vue-router";
 import Vuex from "vuex";
 
 import App from "./App.vue";
@@ -8,10 +8,8 @@ import EmailList from "./EmailList.vue";
 
 import "../scss/custom.scss";
 
-Vue.use(VueRouter);
-Vue.use(Vuex);
-
-const router = new VueRouter({
+const router = createRouter({
+    history: createWebHistory(),
     routes: [
         { path: "/", component: EmailList },
         { path: "/inbox", component: EmailList },
@@ -59,8 +57,4 @@ const store = new Vuex.Store({
     },
 });
 
-new Vue({
-    router,
-    store,
-    render: (h) => h(App),
-}).$mount("#app");
+createApp(App).use(router).use(store).mount("#app");

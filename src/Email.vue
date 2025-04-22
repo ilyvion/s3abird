@@ -12,8 +12,8 @@ import EmailAddress from './EmailAddress.vue';
       <tr>
         <td scope="row">
             <span class="text-secondary">to </span>
-            <template v-for="(addr, index) in email.to">
-                <EmailAddress :address="addr" :key="'to-' + index" />
+            <template v-for="(addr, index) in email.to" :key="'to-' + index">
+                <EmailAddress :address="addr" />
                 <span v-if="index < email.to.length - 1">, </span>
             </template>
         </td>
@@ -21,8 +21,8 @@ import EmailAddress from './EmailAddress.vue';
       <tr>
         <td scope="row">
             <span class="text-secondary">cc </span>
-            <template v-for="(addr, index) in email.cc">
-                <EmailAddress :address="addr" :key="'cc-' + index" />
+            <template v-for="(addr, index) in email.cc" :key="'cc-' + index">
+                <EmailAddress :address="addr" />
                 <span v-if="index < email.cc.length - 1">, </span>
             </template>
         </td>
@@ -43,7 +43,7 @@ import parser from './parser.js';
 
 export default {
     name: 'Email',
-    props: ['messageId'],
+    props: {messageId:String},
     data: function () {
         return {
             email: this.$store.state.emails.get(this.messageId)

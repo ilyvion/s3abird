@@ -4,14 +4,14 @@
     <input class="form-control form-control-sm" type="text" placeholder="type filter expressions, e.g. 'to: hello@example.com', 'from: hi@example.com' or 'subject: Important'" v-model="label">
   </form>
   <div class="clearfix mt-1"></div>
-  <span v-for="label in labels" class="badge badge-pill badge-primary"><strong>{{label.type}}</strong>: {{ label.value }} <i class="ex fas fa-times" @click="removeLabel(label)"></i/></span>
+  <span v-for="label in labels" class="badge badge-pill badge-primary"><strong>{{label.type}}</strong>: {{ label.value }} <i class="ex fas fa-times" @click="removeLabel(label)"></i></span>
 </div>
 </template>
 
 <script>
 export default {
     name: 'Filters',
-    props: [],
+    props: {},
     data: function () {
         return {
             label: ""
