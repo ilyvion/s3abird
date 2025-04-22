@@ -1,8 +1,10 @@
 <template>
     <span>{{ formattedAddress }}</span>
 </template>
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue'
+
+export default defineComponent( {
     name: 'EmailAddress',
     props: {
         address: {
@@ -16,5 +18,5 @@ export default {
             return `${a.name || ''} ${a.address ? `<${a.address}>` : ''}`;
         }
     },
-}
+})
 </script>

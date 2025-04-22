@@ -30,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Support for rewriting `cid:` inline image references to base64 `data:` URIs.
 -   Fallback HTML rendering from plain text using a `textAsHtml` equivalent function.
 -   `Dockerfile` for using the project with Docker
+-   Migrated full codebase to TypeScript with strict type checking (`vue-tsc`)
+-   Ensured all Vue 3 components are properly typed, including `props`, `data`, and `methods`
 
 ## [0.1.0] - 2022-02-14
 

@@ -17,7 +17,7 @@
 </nav>
 </template>
 
-<script>
+<script lang="ts">
 export default {
     name: 'Settings',
     data: function () {
@@ -32,7 +32,7 @@ export default {
                     return `${this.config.bucket}/${this.config.prefix}`;
                 return this.config.bucket;
             },
-            set(val) {
+            set(val:string) {
                 const [bucket, prefix] = val.split(/\/(.+)/);
                 this.config.bucket = bucket;
                 this.config.prefix = prefix;

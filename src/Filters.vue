@@ -8,7 +8,10 @@
 </div>
 </template>
 
-<script>
+<script lang="ts">
+import type { Label } from './labels';
+import * as Labels from './labels';
+
 export default {
     name: 'Filters',
     props: {},
@@ -31,7 +34,7 @@ export default {
                 this.label = "";
             }
         },
-        removeLabel(label) {
+        removeLabel(label:Label) {
             this.$store.commit('removeLabel', label)
         }
     }

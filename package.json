@@ -14,7 +14,7 @@
     "dependencies": {
         "@aws-sdk/client-s3": "^3.787.0",
         "bootstrap": "^4.3.0",
-        "dompurify": "^1.0.8",
+        "dompurify": "^3.2.5",
         "postal-mime": "^2.4.3",
         "vue": "^3.5.13",
         "vue-router": "^4.5.0",
@@ -23,7 +23,9 @@
     "devDependencies": {
         "@vitejs/plugin-vue": "^5.2.3",
         "sass-embedded": "^1.87.0",
+        "typescript": "^5.8.3",
         "vite": "^6.3.2",
-        "vite-plugin-html": "^3.2.2"
+        "vite-plugin-html": "^3.2.2",
+        "vue-tsc": "^2.2.8"
     }
 }

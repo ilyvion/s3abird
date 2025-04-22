@@ -1,4 +1,4 @@
-<script setup>
+<script lang="ts" setup>
 import EmailAddress from './EmailAddress.vue';
 </script>
 <template>
@@ -14,7 +14,7 @@ import EmailAddress from './EmailAddress.vue';
             <span class="text-secondary">to </span>
             <template v-for="(addr, index) in email.to" :key="'to-' + index">
                 <EmailAddress :address="addr" />
-                <span v-if="index < email.to.length - 1">, </span>
+                <span v-if="email.to && index < email.to.length - 1">, </span>
             </template>
         </td>
       </tr>
@@ -23,7 +23,7 @@ import EmailAddress from './EmailAddress.vue';
             <span class="text-secondary">cc </span>
             <template v-for="(addr, index) in email.cc" :key="'cc-' + index">
                 <EmailAddress :address="addr" />
-                <span v-if="index < email.cc.length - 1">, </span>
+                <span v-if="email.cc && index < email.cc.length - 1">, </span>
             </template>
         </td>
       </tr>
@@ -37,16 +37,25 @@ import EmailAddress from './EmailAddress.vue';
 </div>
 </template>
 
-<script>
+<script lang="ts">
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import parser from './parser.js';
+import { defineComponent } from 'vue';
 
-export default {
+interface Data {
+    email: any,
+    error: string | null,
+}
+export default defineComponent({
     name: 'Email',
-    props: {messageId:String},
-    data: function () {
+    props: {messageId:{
+    type: String,
+    required: true
+  }},
+    data: function ():Data {
         return {
-            email: this.$store.state.emails.get(this.messageId)
+            email: this.$store.state.emails.get(this.messageId),
+            error: null,
         };
     },
     computed: {
@@ -60,6 +69,23 @@ export default {
     created: function () {
         if (this.email) {
             // email already loaded
+            return;
+        }
+        if (!this.config) {
+            this.error = 'Missing settings';
+            return;
+        }
+
+        if (!this.config.aws_region) {
+            this.error = 'Missing AWS region in settings';
+            return;
+        }
+        if (!this.config.aws_access_key_id || !this.config.aws_secret_access_key) {
+            this.error = 'Please set AWS credentials in settings';
+            return;
+        }
+        if (!this.config.bucket) {
+            this.error = 'Missing bucket name in settings';
             return;
         }
 
@@ -82,7 +108,7 @@ export default {
                 this.email = parsed;
             });
     }
-}
+})
 </script>
 
 <style scoped>

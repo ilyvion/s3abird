@@ -17,15 +17,18 @@
     </div>
     <div class="row">
       <footer class="container d-flex justify-content-between my-2">
-        <span>Made with <i class="fas fa-heart"></i> by <a href="https://marcinchmiel.com">Marcin Chmiel</a></span>
-        <a href="https://github.com/mewa/s3abird"><i class="fab fa-github"></i> Contribute</a>
+        <span>Maintained with <i class="fas fa-heart"></i> by <a href="https://alexanderschroeder.net/">Alexander Krivács Schrøder</a></span>
+        <a href="https://github.com/ilyvion/s3abird"><i class="fab fa-github"></i> Contribute</a>
+      </footer>
+      <footer class="container mb-2">
+        <span>Originally made with <i class="fas fa-heart"></i> by <a href="https://marcinchmiel.com">Marcin Chmiel</a></span>
       </footer>
     </div>
   </div>
 </div>
 </template>
 
-<script>
+<script lang="ts">
 import Settings from './Settings.vue';
 
 export default {
