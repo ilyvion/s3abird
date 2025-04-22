@@ -22,9 +22,9 @@
 </template>
 
 <script>
-const Settings = require('./Settings.vue');
+import Settings from './Settings.vue';
 
-module.exports = {
+export default {
     name: 'App',
     components: {
         Settings

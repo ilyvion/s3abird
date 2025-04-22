@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.org/mewa/s3abird.svg?branch=master)](https://travis-ci.org/mewa/s3abird)
-
 # What is s3abird?
 
 It's a webmail client for viewing emails stored on AWS S3 buckets.
@@ -52,6 +50,23 @@ Besides configuring an S3 bucket for reads you will probably want to
 [configure
 SES](https://docs.aws.amazon.com/ses/latest/DeveloperGuide/receiving-email-getting-started.html)
 so that it can store incoming messages in this bucket.
+
+# Developing and building
+
+After installing NodeJS and cloning the repo, getting started should be as simple as
+
+```sh
+npm install
+npm run dev
+```
+or
+```sh
+npm install
+npm run build
+npm run preview
+```
+
+The project also includes a `Dockerfile` that can be used to run the project in a container.
 
 # Roadmap
 

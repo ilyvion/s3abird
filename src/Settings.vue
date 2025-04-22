@@ -18,7 +18,7 @@
 </template>
 
 <script>
-module.exports = {
+export default {
     name: 'Settings',
     data: function () {
         return {
@@ -33,7 +33,7 @@ module.exports = {
                 return this.config.bucket;
             },
             set(val) {
-                [bucket, prefix] = val.split(/\/(.+)/);
+                const [bucket, prefix] = val.split(/\/(.+)/);
                 this.config.bucket = bucket;
                 this.config.prefix = prefix;
             }

@@ -1,16 +1,31 @@
+<script setup>
+import EmailAddress from './EmailAddress.vue';
+</script>
 <template>
 <div v-if="email">
   <h4>{{ email.subject || '(no subject)' }}</h4>
   <table class="addr">
     <tbody>
       <tr>
-        <th scope="row">{{ email.from.text }}</th>
+        <th scope="row"><EmailAddress :address="email.from" /></th>
       </tr>
       <tr>
-        <td scope="row"><span class="text-secondary">to</span> {{ email.to ? email.to.text : '' }}</td>
+        <td scope="row">
+            <span class="text-secondary">to </span>
+            <template v-for="(addr, index) in email.to">
+                <EmailAddress :address="addr" :key="'to-' + index" />
+                <span v-if="index < email.to.length - 1">, </span>
+            </template>
+        </td>
       </tr>
       <tr>
-        <td scope="row"><span class="text-secondary">cc</span> {{ email.cc ? email.cc.text : '' }}</td>
+        <td scope="row">
+            <span class="text-secondary">cc </span>
+            <template v-for="(addr, index) in email.cc">
+                <EmailAddress :address="addr" :key="'cc-' + index" />
+                <span v-if="index < email.cc.length - 1">, </span>
+            </template>
+        </td>
       </tr>
       <tr>
         <td scope="row">
@@ -23,10 +38,10 @@
 </template>
 
 <script>
-const AWS = require('aws-sdk');
-const parser = require('./parser.js');
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import parser from './parser.js';
 
-module.exports = {
+export default {
     name: 'Email',
     props: ['messageId'],
     data: function () {
@@ -36,7 +51,7 @@ module.exports = {
     },
     computed: {
         key: function () {
-            return Buffer.from(this.messageId, 'base64').toString()
+            return atob(this.messageId)
         },
         config: function () {
             return this.$store.state.config
@@ -48,15 +63,18 @@ module.exports = {
             return;
         }
 
-        AWS.config.accessKeyId = this.config.aws_access_key_id;
-        AWS.config.secretAccessKey = this.config.aws_secret_access_key;
+        const s3 = new S3Client({
+            region: this.config.aws_region,
+            credentials: {
+                accessKeyId: this.config.aws_access_key_id,
+                secretAccessKey: this.config.aws_secret_access_key,
+            }
+        });
 
-        const s3 = new AWS.S3({ region: this.config.aws_region });
-
-        s3.getObject({
+        s3.send(new GetObjectCommand({
             Bucket: this.config.bucket,
             Key: this.key
-        }).promise()
+        }))
             .then(msg => {
                 return parser(msg.Body);
             })

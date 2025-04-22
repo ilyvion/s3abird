@@ -9,11 +9,7 @@
 </template>
 
 <script>
-const AWS = require('aws-sdk');
-const parser = require('./parser.js');
-const Labels = require('./labels.js');
-
-module.exports = {
+export default {
     name: 'Filters',
     props: [],
     data: function () {
