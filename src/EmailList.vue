@@ -3,26 +3,58 @@ import EmailAddress from './EmailAddress.vue'
 </script>
 <template>
     <div>
-        <h4>Inbox</h4>
+        <h2 class="text-2xl font-semibold">Inbox</h2>
 
         <Filters class="mb-3"></Filters>
 
-        <div class="alert alert-danger" v-if="error">Error: {{ error }}</div>
-        <h5 class="text-secondary" v-if="!emails || loading">Loading...</h5>
-        <h5 class="text-secondary" v-if="!loading && emails && emails.length == 0">
-            There's nothing in here
-        </h5>
-        <table class="table table-hover table-responsive-lg">
+        <div class="alert alert-error text-error-content font-semibold" v-if="error">
+            Error: {{ error }}
+        </div>
+        <table class="table-hover table" v-if="!(emails?.length > 0) && loading">
             <tbody>
-                <tr v-for="email in emails" @click="openEmail(email)">
-                    <td class="text-truncate" style="max-width: 300px">
+                <tr v-for="index in 10" :key="index">
+                    <td class="truncate" style="max-width: 300px">
+                        <div class="skeleton h-6 w-64"></div>
+                    </td>
+                    <td class="truncate" style="width: 100%; min-width: 300px; max-width: 1px">
+                        <div class="flex gap-2">
+                            <div class="skeleton h-6 w-full flex-1"></div>
+                            <div class="skeleton h-6 w-full flex-1/3"></div>
+                        </div>
+                    </td>
+                    <td class="text-muted text-right text-nowrap">
+                        <div class="skeleton h-6 w-32"></div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h3 class="text-neutral-500" v-if="!loading && emails && emails.length == 0">
+            There's nothing in here
+        </h3>
+        <table class="block md:table" v-if="emails && emails.length > 0">
+            <thead class="hidden md:table-header-group">
+                <tr>
+                    <th>From</th>
+                    <th>Subject</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody class="block md:table-row-group">
+                <tr
+                    v-for="email in emails"
+                    @click="openEmail(email)"
+                    class="hover:bg-base-300 block cursor-pointer max-sm:m-2 max-sm:rounded-2xl max-sm:border max-sm:border-neutral-300 max-sm:p-2 max-sm:shadow-sm md:table-row"
+                >
+                    <td class="block truncate md:table-cell" style="max-width: 300px">
                         <EmailAddress :address="email.from" />
                     </td>
-                    <td class="text-truncate" style="width: 100%; min-width: 300px; max-width: 1px">
+                    <td
+                        class="block truncate md:table-cell md:w-full md:max-w-[1px] md:min-w-[300px]"
+                    >
                         {{ email.subject || '(no subject)'
-                        }}<span class="text-secondary">&nbsp;-&nbsp;{{ email.text }}</span>
+                        }}<span class="text-neutral-400">&nbsp;-&nbsp;{{ email.text }}</span>
                     </td>
-                    <td class="text-nowrap text-muted text-right">
+                    <td class="text-muted block text-nowrap md:table-cell md:text-right">
                         <small>{{ email.date ? new Date(email.date).toLocaleString() : '' }}</small>
                     </td>
                 </tr>
@@ -158,7 +190,7 @@ export default defineComponent({
 })
 </script>
 
-<style lang="scss" scoped>
+<!-- <style lang="scss" scoped>
 .table {
     font-size: 0.875rem;
 
@@ -166,4 +198,4 @@ export default defineComponent({
         cursor: pointer;
     }
 }
-</style>
+</style> -->

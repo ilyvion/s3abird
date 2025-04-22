@@ -3,47 +3,38 @@ import EmailAddress from './EmailAddress.vue'
 </script>
 <template>
     <div v-if="email">
-        <h4>{{ email.subject || '(no subject)' }}</h4>
-        <table class="addr">
-            <tbody>
-                <tr>
-                    <th scope="row"><EmailAddress :address="email.from" /></th>
-                </tr>
-                <tr>
-                    <td scope="row">
-                        <span class="text-secondary">to </span>
-                        <template v-for="(addr, index) in email.to" :key="'to-' + index">
-                            <EmailAddress :address="addr" />
-                            <span v-if="email.to && index < email.to.length - 1">, </span>
-                        </template>
-                    </td>
-                </tr>
-                <tr>
-                    <td scope="row">
-                        <span class="text-secondary">cc </span>
-                        <template v-for="(addr, index) in email.cc" :key="'cc-' + index">
-                            <EmailAddress :address="addr" />
-                            <span v-if="email.cc && index < email.cc.length - 1">, </span>
-                        </template>
-                    </td>
-                </tr>
-                <tr>
-                    <td scope="row">
-                        <div class="my-2" v-html="email.html || email.textAsHtml"></div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+        <h2 class="text-xl font-bold">{{ email.subject || '(no subject)' }}</h2>
+        <ul>
+            <li class="font-semibold">From: <EmailAddress :address="email.from" /></li>
+            <li>
+                <span class="text-neutral-500">To: </span>
+                <template v-for="(addr, index) in email.to" :key="'to-' + index">
+                    <EmailAddress :address="addr" />
+                    <span v-if="email.to && index < email.to.length - 1">, </span>
+                </template>
+            </li>
+
+            <li v-if="email.cc && email.cc.length > 0">
+                <span class="text-neutral-500">CC: </span>
+                <template v-for="(addr, index) in email.cc" :key="'cc-' + index">
+                    <EmailAddress :address="addr" />
+                    <span v-if="email.cc && index < email.cc.length - 1">, </span>
+                </template>
+            </li>
+        </ul>
+        <div class="reset my-2">
+            <div class="prose mx-auto" v-html="email.html || email.textAsHtml"></div>
+        </div>
     </div>
 </template>
 
 <script lang="ts">
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
-import parser from './parser.js'
+import parser, { type ParsedEmail } from './parser.js'
 import { defineComponent } from 'vue'
 
 interface Data {
-    email: any
+    email: ParsedEmail | undefined
     error: string | null
 }
 export default defineComponent({
@@ -114,10 +105,3 @@ export default defineComponent({
     },
 })
 </script>
-
-<style scoped>
-table.addr {
-    font-size: 0.875rem;
-    letter-spacing: 0.2px;
-}
-</style>

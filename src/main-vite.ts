@@ -6,7 +6,8 @@ import App from './App.vue'
 import Email from './Email.vue'
 import EmailList from './EmailList.vue'
 
-import '../scss/custom.scss'
+import 'animate.css'
+import './style.css'
 
 const router = createRouter({
     history: createWebHistory(),

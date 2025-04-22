@@ -1,80 +1,60 @@
+<script lang="ts" setup>
+import Settings from './Settings.vue'
+import Navbar from './Navbar.vue'
+</script>
 <template>
-    <div>
-        <Settings></Settings>
-        <div class="container-fluid">
-            <div class="row justify-content-center">
-                <div class="mt-2 col col-sm-9 col-md-10">
-                    <div class="bg-light rounded px-3 py-2">
-                        <router-view v-slot="{ Component }">
-                            <keep-alive include="EmailList">
-                                <transition name="fade" mode="out-in">
-                                    <component :is="Component" />
-                                </transition>
-                            </keep-alive>
-                        </router-view>
-                    </div>
+    <div class="drawer h-screen">
+        <input id="menu-drawer" type="checkbox" class="drawer-toggle" />
+        <div class="drawer-content flex h-screen flex-col">
+            <Navbar />
+            <div class="bg-base-200 container mx-auto overflow-scroll">
+                <div class="bg-light rounded px-3 py-2">
+                    <router-view v-slot="{ Component }">
+                        <keep-alive include="EmailList">
+                            <transition
+                                name="fade"
+                                mode="out-in"
+                                enter-active-class="animate__animated animate__fadeInLeft animate__faster"
+                                leave-active-class="animate__animated animate__fadeOutRight animate__faster"
+                            >
+                                <component :is="Component" />
+                            </transition>
+                        </keep-alive>
+                    </router-view>
                 </div>
             </div>
-            <div class="row">
-                <footer class="container d-flex justify-content-between my-2">
+            <footer
+                class="bg-accent text-accent-content border-t-accent-content/30 container flex flex-row justify-between gap-2 border-t p-2 text-xs md:px-6"
+            >
+                <div class="flex flex-col gap-2">
                     <span
-                        >Maintained with <i class="fas fa-heart"></i> by
-                        <a href="https://alexanderschroeder.net/"
-                            >Alexander Krivács Schrøder</a
+                        >Current version maintained with <i class="fas fa-heart"></i> by
+                        <a class="link" href="https://alexanderschroeder.net/"
+                            >Alexander&nbsp;Krivács&nbsp;Schrøder</a
                         ></span
                     >
-                    <a href="https://github.com/ilyvion/s3abird"
-                        ><i class="fab fa-github"></i> Contribute</a
+                    <span>
+                        Original made with <i class="fas fa-heart"></i> by
+                        <a class="link" href="https://marcinchmiel.com">Marcin&nbsp;Chmiel</a>
+                    </span>
+                </div>
+                <div>
+                    <a class="link flex items-center" href="https://github.com/ilyvion/s3abird"
+                        ><i class="fab fa-github"></i>&nbsp;Contribute</a
                     >
-                </footer>
-                <footer class="container mb-2">
-                    <span
-                        >Originally made with <i class="fas fa-heart"></i> by
-                        <a href="https://marcinchmiel.com">Marcin Chmiel</a></span
-                    >
-                </footer>
-            </div>
+                </div>
+            </footer>
+        </div>
+
+        <div class="drawer-side z-20 lg:hidden">
+            <label for="menu-drawer" aria-label="close menu" class="drawer-overlay"></label>
+            <div class="bg-base-300 h-screen w-[90%]"><Settings class="m-2 flex-col" /></div>
         </div>
     </div>
 </template>
 
 <script lang="ts">
-import Settings from './Settings.vue'
-
 export default {
     name: 'App',
-    components: {
-        Settings,
-    },
 }
 </script>
-
-<style lang="scss" scoped>
-footer {
-    font-size: 0.875rem;
-
-    color: rgba(#fff, 0.4);
-
-    a {
-        &:hover {
-            color: rgba(#fff, 7);
-        }
-
-        color: inherit;
-        text-decoration: none;
-    }
-}
-
-.fade-enter-active,
-.fade-leave-active {
-    transition: opacity 0.3s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-    opacity: 0;
-}
-.fade-enter-to,
-.fade-leave-from {
-    opacity: 1;
-}
-</style>
