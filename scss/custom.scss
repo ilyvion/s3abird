@@ -1,11 +1,12 @@
-@import "../node_modules/bootstrap/scss/bootstrap";
+@import '../node_modules/bootstrap/scss/bootstrap';
 
 @import url('https://fonts.googleapis.com/css?family=Ubuntu');
 
 // light-blue 200
-$bg-color: #81D4FA;
+$bg-color: #81d4fa;
 
-html, body {
+html,
+body {
     height: 100%;
     background-color: $bg-color;
 }

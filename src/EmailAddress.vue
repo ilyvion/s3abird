@@ -4,19 +4,19 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 
-export default defineComponent( {
+export default defineComponent({
     name: 'EmailAddress',
     props: {
         address: {
             type: Object,
-            required: true
-        }
+            required: true,
+        },
     },
     computed: {
         formattedAddress() {
-            const a = this.address || {};
-            return `${a.name || ''} ${a.address ? `<${a.address}>` : ''}`;
-        }
+            const a = this.address || {}
+            return `${a.name || ''} ${a.address ? `<${a.address}>` : ''}`
+        },
     },
 })
 </script>
