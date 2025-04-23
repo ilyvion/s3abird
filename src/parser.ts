@@ -8,31 +8,29 @@ export type ParsedEmail = Email & {
     key: string
 }
 
-export default function (email: RawEmail): Promise<ParsedEmail> {
-    return PostalMime.parse(email).then((parsed) => {
-        if (parsed.text) {
-            parsed.text = DOMPurify.sanitize(parsed.text)
-        }
-        if (parsed.html) {
-            parsed.html = DOMPurify.sanitize(parsed.html)
-        }
-        let extended = parsed as ParsedEmail
-        extended.textAsHtml = textToHtml(extended.text)
+export default async function (email: RawEmail, emailKey: string): Promise<ParsedEmail> {
+    const parsed = await PostalMime.parse(email)
+    if (parsed.text) {
+        parsed.text = DOMPurify.sanitize(parsed.text)
+    }
+    if (parsed.html) {
+        parsed.html = DOMPurify.sanitize(parsed.html)
+    }
+    let extended = parsed as ParsedEmail
+    extended.textAsHtml = textToHtml(extended.text)
+    extended.key = emailKey
+    for (const attachment of extended.attachments) {
+        if (!attachment.contentId) continue
 
-        for (const attachment of extended.attachments) {
-            if (!attachment.contentId) continue
+        const cid = attachment.contentId.replace(/^<|>$/g, '') // strip angle brackets
+        const base64 = attachmentToBase64(attachment)
 
-            const cid = attachment.contentId.replace(/^<|>$/g, '') // strip angle brackets
-            const base64 = attachmentToBase64(attachment)
+        const dataUri = `data:${attachment.mimeType};base64,${base64}`
+        const cidRegex = new RegExp(`cid:${cid.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g')
 
-            const dataUri = `data:${attachment.mimeType};base64,${base64}`
-            const cidRegex = new RegExp(`cid:${cid.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g')
-
-            extended.html = extended.html?.replace(cidRegex, dataUri)
-        }
-
-        return extended
-    })
+        extended.html = extended.html?.replace(cidRegex, dataUri)
+    }
+    return extended
 }
 
 function attachmentToBase64(att: Attachment): string {

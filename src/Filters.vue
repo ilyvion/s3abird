@@ -8,54 +8,41 @@
                 v-model="label"
             />
         </form>
-        Filters: 
+        Filters:
         <span v-if="labels.length == 0" class="text-accent-content opacity-50">None</span>
         <span v-for="label in labels" class="badge badge-accent gap-0"
             ><strong>{{ label.type }}</strong
-            >: {{ label.value }} <i class="ex fas fa-times ms-2 justify-baseline" @click="removeLabel(label)"></i
+            >: {{ label.value }}
+            <i
+                class="fas fa-times ms-2 cursor-pointer justify-baseline"
+                @click="removeLabel(label)"
+            ></i
         ></span>
     </div>
 </template>
 
-<script lang="ts">
-import type { Label } from './labels'
+<script lang="ts" setup>
+import { ref, computed } from 'vue'
+import { useStore } from 'vuex'
 import * as Labels from './labels'
+import type { Label } from './labels'
+import { key } from './store'
 
-export default {
-    name: 'Filters',
-    props: {},
-    data: function () {
-        return {
-            label: '',
-        }
-    },
-    computed: {
-        labels: function () {
-            return this.$store.state.labels
-        },
-    },
-    methods: {
-        updateLabels() {
-            let label = Labels.parse(this.label)
+const store = useStore(key)
 
-            if (label) {
-                this.$store.commit('addLabel', label)
-                this.label = ''
-            }
-        },
-        removeLabel(label: Label) {
-            this.$store.commit('removeLabel', label)
-        },
-    },
+const label = ref('')
+
+const labels = computed(() => store.state.labels)
+
+function updateLabels() {
+    const parsed = Labels.parse(label.value)
+    if (parsed) {
+        store.commit('addLabel', parsed)
+        label.value = ''
+    }
+}
+
+function removeLabel(label: Label) {
+    store.commit('removeLabel', label)
 }
 </script>
-
-<style scoped>
-table.addr {
-    font-size: 0.875rem;
-    letter-spacing: 0.2px;
-}
-.ex.fas {
-    cursor: pointer;
-}
-</style>

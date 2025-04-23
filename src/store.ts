@@ -3,18 +3,11 @@ import type { InjectionKey } from 'vue'
 import { createStore, Store } from 'vuex'
 import type { ParsedEmail } from './parser'
 import type { Label } from './labels'
-
-export interface Config {
-    aws_region?: string
-    aws_access_key_id?: string
-    aws_secret_access_key?: string
-    prefix?: string
-    bucket?: string
-}
+import type { AwsConfig } from './config'
 
 // define your typings for the store state
 export interface State {
-    config: Config | null
+    config: AwsConfig | null
     emails: Map<string, ParsedEmail>
     labels: Array<Label>
 }
@@ -39,7 +32,7 @@ export const store = createStore<State>({
         },
     },
     mutations: {
-        updateConfig(state, newConfig: Config) {
+        updateConfig(state, newConfig: AwsConfig) {
             state.config = newConfig
             localStorage.config = JSON.stringify(newConfig)
         },

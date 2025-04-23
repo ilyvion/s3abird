@@ -1,6 +1,3 @@
-<script lang="ts" setup>
-import Settings from './Settings.vue'
-</script>
 <template>
     <nav class="navbar bg-base-200 border-b border-neutral-300 shadow-md">
         <h1 class="flex-1">
@@ -16,10 +13,6 @@ import Settings from './Settings.vue'
     </nav>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
-
-export default defineComponent({
-    name: 'Navbar',
-})
+<script lang="ts" setup>
+import Settings from './Settings.vue'
 </script>

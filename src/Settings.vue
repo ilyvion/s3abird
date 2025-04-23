@@ -37,31 +37,29 @@
     </form>
 </template>
 
-<script lang="ts">
-export default {
-    name: 'Settings',
-    data: function () {
-        return {
-            config: this.$store.state.config || {},
-        }
+<script setup lang="ts">
+import { computed, reactive } from 'vue'
+import { useStore } from 'vuex'
+import { key, type State } from './store'
+
+const store = useStore(key)
+
+// Make a reactive copy of the Vuex config
+const config = reactive({ ...store.state.config })
+
+// Two-way computed "bucket" property
+const bucket = computed({
+    get() {
+        return config.prefix ? `${config.bucket}/${config.prefix}` : config.bucket
     },
-    computed: {
-        bucket: {
-            get() {
-                if (this.config.prefix) return `${this.config.bucket}/${this.config.prefix}`
-                return this.config.bucket
-            },
-            set(val: string) {
-                const [bucket, prefix] = val.split(/\/(.+)/)
-                this.config.bucket = bucket
-                this.config.prefix = prefix
-            },
-        },
+    set(val: string) {
+        const [bucketName, prefix] = val.split(/\/(.+)/)
+        config.bucket = bucketName
+        config.prefix = prefix
     },
-    methods: {
-        updateConfig: function () {
-            this.$store.commit('updateConfig', { ...this.config })
-        },
-    },
+})
+
+function updateConfig() {
+    store.commit('updateConfig', { ...config })
 }
 </script>

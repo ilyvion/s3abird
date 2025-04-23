@@ -1,6 +1,3 @@
-<script lang="ts" setup>
-import EmailAddress from './EmailAddress.vue'
-</script>
 <template>
     <div>
         <h2 class="text-2xl font-semibold">Inbox</h2>
@@ -49,13 +46,13 @@ import EmailAddress from './EmailAddress.vue'
                         <EmailAddress :address="email.from" />
                     </td>
                     <td
-                        class="block truncate md:table-cell md:w-full md:max-w-[1px] md:min-w-[300px]"
+                        class="block truncate max-sm:text-xs md:table-cell md:w-full md:max-w-[1px] md:min-w-[300px]"
                     >
                         {{ email.subject || '(no subject)'
                         }}<span class="text-neutral-400">&nbsp;-&nbsp;{{ email.text }}</span>
                     </td>
-                    <td class="text-muted block text-nowrap md:table-cell md:text-right">
-                        <small>{{ email.date ? new Date(email.date).toLocaleString() : '' }}</small>
+                    <td class="block text-xs text-nowrap md:table-cell md:text-right">
+                        {{ email.date ? new Date(email.date).toLocaleString() : '' }}
                     </td>
                 </tr>
             </tbody>
@@ -63,139 +60,89 @@ import EmailAddress from './EmailAddress.vue'
     </div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
+import { ref, computed, onMounted, watch } from 'vue'
+import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
 import { S3Client, ListObjectsV2Command, GetObjectCommand, type _Object } from '@aws-sdk/client-s3'
 import parser, { type ParsedEmail } from './parser.js'
 import Filters from './Filters.vue'
-import { defineComponent } from 'vue'
+import EmailAddress from './EmailAddress.vue'
+import { key as storeKey } from './store'
+import { validateAwsConfig } from './config.js'
 
-interface Data {
-    error: string | null
-    loading: boolean
+const store = useStore(storeKey)
+const router = useRouter()
+
+const error = ref<string | null>(null)
+const loading = ref(false)
+
+const config = computed(() => store.state.config)
+const emails = computed<ParsedEmail[]>(() => store.getters.emails)
+
+function openEmail(email: ParsedEmail) {
+    router.push({ path: `/inbox/${email.key}` })
 }
-export default defineComponent({
-    name: 'EmailList',
-    data: function (): Data {
-        return {
-            error: null,
-            loading: false,
-        }
-    },
-    computed: {
-        config: function () {
-            return this.$store.state.config
-        },
-        emails: function (): ParsedEmail[] {
-            return this.$store.getters.emails
-        },
-    },
-    methods: {
-        openEmail: function (e: ParsedEmail) {
-            this.$router.push({ path: `/inbox/${e.key}` })
-        },
-        loadEmails() {
-            if (!this.config) {
-                this.loading = false
-                return
-            }
 
-            if (!this.config.aws_region) {
-                this.error = 'Missing AWS region in settings'
-                this.loading = false
-                return
-            }
-            if (!this.config.aws_access_key_id || !this.config.aws_secret_access_key) {
-                this.error = 'Please set AWS credentials in settings'
-                this.loading = false
-                return
-            }
-            if (!this.config.bucket) {
-                this.error = 'Missing bucket name in settings'
-                this.loading = false
-                return
-            }
+async function loadEmails() {
+    if (!config.value) {
+        loading.value = false
+        return
+    }
 
-            const s3 = new S3Client({
-                region: this.config.aws_region,
-                credentials: {
-                    accessKeyId: this.config.aws_access_key_id,
-                    secretAccessKey: this.config.aws_secret_access_key,
-                },
-            })
+    const result = validateAwsConfig(config.value, error, loading)
+    if (!result.result) {
+        return
+    }
+    const { aws_region, aws_access_key_id, aws_secret_access_key, bucket, prefix } =
+        result.validatedConfig
 
-            this.error = null
-            this.loading = true
-            const config = this.config
-            s3.send(
-                new ListObjectsV2Command({
-                    Bucket: config.bucket,
-                    Prefix: config.prefix,
-                })
+    const s3 = new S3Client({
+        region: aws_region,
+        credentials: {
+            accessKeyId: aws_access_key_id,
+            secretAccessKey: aws_secret_access_key,
+        },
+    })
+
+    error.value = null
+    loading.value = true
+
+    try {
+        const listResponse = await s3.send(
+            new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix })
+        )
+
+        const sorted = (listResponse.Contents ?? [])
+            .filter(
+                (obj): obj is _Object & { LastModified: Date } => obj.LastModified instanceof Date
             )
-                .then((r) => r.Contents)
-                .then((r) =>
-                    (r ?? [])
-                        .filter(
-                            (obj): obj is _Object & { LastModified: Date } =>
-                                obj.LastModified instanceof Date
-                        )
-                        .sort((a, b) => b.LastModified.getTime() - a.LastModified.getTime())
-                )
-                .then((items) =>
-                    Promise.all(
-                        items.map((item) =>
-                            s3
-                                .send(
-                                    new GetObjectCommand({
-                                        Bucket: config.bucket,
-                                        Key: item.Key,
-                                    })
-                                )
-                                .then((msg) => {
-                                    return parser(msg.Body)
-                                })
-                                .then((parsed) => {
-                                    // 🔐 guard to satisfy TS — should never really happen
-                                    if (!item.Key) throw new Error('Missing key')
+            .sort((a, b) => b.LastModified.getTime() - a.LastModified.getTime())
 
-                                    parsed.key = btoa(item.Key)
-                                    return parsed
-                                })
-                        )
-                    )
-                )
-                .then((emails) => {
-                    this.loading = false
-                    this.$store.commit('updateEmails', emails)
-                })
-                .catch((e) => {
-                    this.loading = false
-                    this.error = e
-                })
-        },
-    },
-    created: function () {
-        if (this.config) {
-            this.loadEmails()
-        }
-    },
-    watch: {
-        config: function (val) {
-            this.loadEmails()
-        },
-    },
-    components: {
-        Filters,
-    },
-})
-</script>
+        const parsedEmails = await Promise.all(
+            sorted.map(async (item) => {
+                // 🔐 guard to satisfy TS — should never really happen
+                if (!item.Key) throw new Error('Missing key')
 
-<!-- <style lang="scss" scoped>
-.table {
-    font-size: 0.875rem;
+                const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: item.Key }))
+                const parsed = await parser(res.Body, btoa(item.Key))
+                return parsed
+            })
+        )
 
-    tbody tr {
-        cursor: pointer;
+        store.commit('updateEmails', parsedEmails)
+    } catch (e: any) {
+        error.value = e.message || 'Unknown error while loading emails'
+    } finally {
+        loading.value = false
     }
 }
-</style> -->
+
+onMounted(() => {
+    if (config.value) loadEmails()
+})
+
+watch(config, () => {
+    loadEmails()
+})
+</script>

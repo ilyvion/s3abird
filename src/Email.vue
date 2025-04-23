@@ -1,6 +1,3 @@
-<script lang="ts" setup>
-import EmailAddress from './EmailAddress.vue'
-</script>
 <template>
     <div v-if="email">
         <h2 class="text-xl font-bold">{{ email.subject || '(no subject)' }}</h2>
@@ -28,80 +25,58 @@ import EmailAddress from './EmailAddress.vue'
     </div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
+import { ref, computed, onMounted } from 'vue'
+import { useStore } from 'vuex'
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import parser, { type ParsedEmail } from './parser.js'
-import { defineComponent } from 'vue'
+import type { Address } from 'postal-mime'
+import EmailAddress from './EmailAddress.vue'
+import { key as injectionKey } from './store'
+import { validateAwsConfig } from './config.js'
 
-interface Data {
-    email: ParsedEmail | undefined
-    error: string | null
-}
-export default defineComponent({
-    name: 'Email',
-    props: {
-        messageId: {
-            type: String,
-            required: true,
+const props = defineProps<{
+    messageId: string
+}>()
+
+const store = useStore(injectionKey)
+
+const email = ref<ParsedEmail | undefined>(store.state.emails.get(props.messageId))
+const error = ref<string | null>(null)
+
+const key = computed(() => atob(props.messageId))
+const config = computed(() => store.state.config)
+
+onMounted(async () => {
+    if (email.value) {
+        // email already loaded
+        return
+    }
+
+    if (!config.value) {
+        error.value = 'Missing settings'
+        return
+    }
+
+    const result = validateAwsConfig(config.value, error)
+    if (!result.result) {
+        return
+    }
+    const { aws_region, aws_access_key_id, aws_secret_access_key, bucket } = result.validatedConfig
+
+    const s3 = new S3Client({
+        region: aws_region,
+        credentials: {
+            accessKeyId: aws_access_key_id,
+            secretAccessKey: aws_secret_access_key,
         },
-    },
-    data: function (): Data {
-        return {
-            email: this.$store.state.emails.get(this.messageId),
-            error: null,
-        }
-    },
-    computed: {
-        key: function () {
-            return atob(this.messageId)
-        },
-        config: function () {
-            return this.$store.state.config
-        },
-    },
-    created: function () {
-        if (this.email) {
-            // email already loaded
-            return
-        }
-        if (!this.config) {
-            this.error = 'Missing settings'
-            return
-        }
+    })
 
-        if (!this.config.aws_region) {
-            this.error = 'Missing AWS region in settings'
-            return
-        }
-        if (!this.config.aws_access_key_id || !this.config.aws_secret_access_key) {
-            this.error = 'Please set AWS credentials in settings'
-            return
-        }
-        if (!this.config.bucket) {
-            this.error = 'Missing bucket name in settings'
-            return
-        }
-
-        const s3 = new S3Client({
-            region: this.config.aws_region,
-            credentials: {
-                accessKeyId: this.config.aws_access_key_id,
-                secretAccessKey: this.config.aws_secret_access_key,
-            },
-        })
-
-        s3.send(
-            new GetObjectCommand({
-                Bucket: this.config.bucket,
-                Key: this.key,
-            })
-        )
-            .then((msg) => {
-                return parser(msg.Body)
-            })
-            .then((parsed) => {
-                this.email = parsed
-            })
-    },
+    try {
+        const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key.value }))
+        email.value = await parser(res.Body, btoa(key.value))
+    } catch (err: any) {
+        error.value = err.message || 'Unknown error while loading email'
+    }
 })
 </script>
