@@ -19,6 +19,15 @@
                 </template>
             </li>
         </ul>
+        <details class="bg-base-100 border-base-300 collapse-arrow collapse block">
+            <summary class="collapse-title font-semibold">Additional e-mail headers</summary>
+            <dl class="m-2">
+                <template v-for="(header, index) in headers" :key="'header-' + index">
+                    <dt class="text-neutral-500">{{ header.key }}:</dt>
+                    <dd class="ms-2 break-words text-ellipsis">{{ header.value }}</dd>
+                </template>
+            </dl>
+        </details>
         <div class="reset my-2">
             <div class="prose mx-auto" v-html="email.html || email.textAsHtml"></div>
         </div>
@@ -47,6 +56,10 @@ const error = ref<string | null>(null)
 
 const key = computed(() => atob(props.messageId))
 const config = computed(() => store.state.config)
+
+const headers = computed(() =>
+    (email.value?.headers || []).sort((a, b) => a.key.localeCompare(b.key))
+)
 
 onMounted(async () => {
     if (email.value) {

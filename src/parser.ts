@@ -16,20 +16,31 @@ export default async function (email: RawEmail, emailKey: string): Promise<Parse
     if (parsed.html) {
         parsed.html = DOMPurify.sanitize(parsed.html)
     }
+    if (parsed.headers) {
+        for (const header of parsed.headers) {
+            header.key = DOMPurify.sanitize(header.key)
+            header.value = DOMPurify.sanitize(header.value)
+        }
+    }
+
     let extended = parsed as ParsedEmail
     extended.textAsHtml = textToHtml(extended.text)
     extended.key = emailKey
-    for (const attachment of extended.attachments) {
-        if (!attachment.contentId) continue
 
-        const cid = attachment.contentId.replace(/^<|>$/g, '') // strip angle brackets
-        const base64 = attachmentToBase64(attachment)
+    if (extended.html) {
+        for (const attachment of extended.attachments) {
+            if (!attachment.contentId) continue
 
-        const dataUri = `data:${attachment.mimeType};base64,${base64}`
-        const cidRegex = new RegExp(`cid:${cid.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g')
+            const cid = attachment.contentId.replace(/^<|>$/g, '') // strip angle brackets
+            const base64 = attachmentToBase64(attachment)
 
-        extended.html = extended.html?.replace(cidRegex, dataUri)
+            const dataUri = `data:${attachment.mimeType};base64,${base64}`
+            const cidRegex = new RegExp(`cid:${cid.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g')
+
+            extended.html = DOMPurify.sanitize(extended.html.replace(cidRegex, dataUri))
+        }
     }
+
     return extended
 }
 

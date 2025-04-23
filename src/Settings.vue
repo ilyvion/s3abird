@@ -1,5 +1,5 @@
 <template>
-    <form class="flex gap-2" @submit.prevent="updateConfig">
+    <form class="flex gap-4 md:gap-2" @submit.prevent="updateConfig">
         <label class="floating-label">
             <input
                 class="input"

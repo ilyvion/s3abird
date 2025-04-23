@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Migrated all styling from Bootstrap 4 to Tailwind CSS with daisyUI
 - Updated layout and spacing across components using Tailwind
 - Migrated all Vue components from Options API to Composition API (`<script setup>`).
+- Added the ability to view all e-mail headers
 
 ### Removed
 
