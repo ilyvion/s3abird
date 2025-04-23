@@ -3,10 +3,11 @@
 @import 'tailwindcss';
 @plugin "@tailwindcss/typography";
 @plugin "daisyui" {
-    themes:
-        cupcake --default,
-        coffee --prefersdark;
+    themes: false;
 }
+
+@plugin "./catppuccinTheme.latte.ts";
+@plugin "./catppuccinTheme.frappe.ts";
 
 @theme {
     --default-font-family: 'Outfit';

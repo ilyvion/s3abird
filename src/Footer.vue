@@ -1,6 +1,6 @@
 <template>
     <footer
-        class="bg-accent text-accent-content border-t-accent-content/30 flex flex-row justify-between gap-2 border-t p-2 text-xs md:px-6"
+        class="bg-base-300 flex flex-row justify-between gap-2 border-t border-neutral-300 p-2 text-xs md:px-6"
     >
         <div class="flex flex-col gap-2">
             <span

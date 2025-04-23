@@ -1,5 +1,5 @@
 <template>
-    <nav class="navbar bg-base-200 border-b border-neutral-300 shadow-md">
+    <nav class="navbar bg-base-300 border-b border-neutral-300 shadow-md">
         <h1 class="flex-1">
             <router-link class="mx-2 text-3xl font-semibold" to="/">s3abird</router-link>
         </h1>
