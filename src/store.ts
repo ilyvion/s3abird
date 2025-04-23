@@ -4,6 +4,7 @@ import { createStore, Store } from 'vuex'
 import type { ParsedEmail } from './parser'
 import type { Label } from './labels'
 import type { AwsConfig } from './config'
+import { clearEmailCache } from './cache'
 
 // define your typings for the store state
 export interface State {
@@ -33,8 +34,14 @@ export const store = createStore<State>({
     },
     mutations: {
         updateConfig(state, newConfig: AwsConfig) {
+            const oldConfig = state.config
             state.config = newConfig
             localStorage.config = JSON.stringify(newConfig)
+
+            // If the config has changed, clear the email cache
+            if (JSON.stringify(oldConfig) !== JSON.stringify(newConfig)) {
+                clearEmailCache()
+            }
         },
         updateEmails(state, emails: ParsedEmail[]) {
             const map = new Map()

@@ -34,6 +34,7 @@ import type { Address } from 'postal-mime'
 import EmailAddress from './EmailAddress.vue'
 import { key as injectionKey } from './store'
 import { validateAwsConfig } from './config.js'
+import { getCachedEmail, setCachedEmail } from './cache.js'
 
 const props = defineProps<{
     messageId: string
@@ -64,6 +65,14 @@ onMounted(async () => {
     }
     const { aws_region, aws_access_key_id, aws_secret_access_key, bucket } = result.validatedConfig
 
+    const cacheKey = btoa(key.value)
+
+    const cached = await getCachedEmail(cacheKey)
+    if (cached) {
+        email.value = cached
+        return
+    }
+
     const s3 = new S3Client({
         region: aws_region,
         credentials: {
@@ -74,7 +83,9 @@ onMounted(async () => {
 
     try {
         const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key.value }))
-        email.value = await parser(res.Body, btoa(key.value))
+        const parsed = await parser(res.Body, cacheKey)
+        await setCachedEmail(cacheKey, parsed)
+        email.value = parsed
     } catch (err: any) {
         error.value = err.message || 'Unknown error while loading email'
     }

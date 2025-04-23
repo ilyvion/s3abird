@@ -70,6 +70,7 @@ import Filters from './Filters.vue'
 import EmailAddress from './EmailAddress.vue'
 import { key as storeKey } from './store'
 import { validateAwsConfig } from './config.js'
+import { getCachedEmail, setCachedEmail } from './cache.js'
 
 const store = useStore(storeKey)
 const router = useRouter()
@@ -124,8 +125,14 @@ async function loadEmails() {
                 // 🔐 guard to satisfy TS — should never really happen
                 if (!item.Key) throw new Error('Missing key')
 
+                const cacheKey = btoa(item.Key)
+
+                const cached = await getCachedEmail(cacheKey)
+                if (cached) return cached
+
                 const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: item.Key }))
-                const parsed = await parser(res.Body, btoa(item.Key))
+                const parsed = await parser(res.Body, cacheKey)
+                await setCachedEmail(cacheKey, parsed)
                 return parsed
             })
         )
