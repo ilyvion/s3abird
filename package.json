@@ -19,6 +19,7 @@
         "animate.css": "^4.1.1",
         "dompurify": "^3.2.5",
         "idb": "^8.0.2",
+        "pinia": "^3.0.2",
         "postal-mime": "^2.4.3",
         "tailwindcss": "^4.1.4",
         "vue": "^3.5.13",

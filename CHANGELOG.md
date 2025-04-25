@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated layout and spacing across components using Tailwind
 - Migrated all Vue components from Options API to Composition API (`<script setup>`).
 - Added the ability to view all e-mail headers
+- Migrated all existing Vuex store usages (`Emails`, `Config`, `Theme`) to Pinia stores
+- Refactored `App.vue`, `Navbar.vue`, `EmailList.vue`, `Filters.vue`, and `Settings.vue` to use Pinia
 
 ### Removed
 
@@ -39,6 +41,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Migrated full codebase to TypeScript with strict type checking (`vue-tsc`)
 - Ensured all Vue 3 components are properly typed, including `props`, `data`, and `methods`
 - Theme support for light/dark modes
+- New `ThemeController.vue` with three-state toggle and theme-select buttons
+- `useEffectiveTheme()` composable to compute and apply theme reactively
+- `useThreeStateCheckbox()` composable for synced indeterminate checkbox state
+- Pinia as the new state management solution, replacing Vuex
 
 ## [0.1.0] - 2022-02-14
 

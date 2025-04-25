@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
+import { createPinia } from 'pinia'
 
-import { store, key } from './store'
 import App from './App.vue'
 import Email from './Email.vue'
 import EmailList from './EmailList.vue'
@@ -18,4 +18,4 @@ const router = createRouter({
     ],
 })
 
-createApp(App).use(router).use(store, key).mount('#app')
+createApp(App).use(router).use(createPinia()).mount('#app')

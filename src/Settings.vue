@@ -39,13 +39,12 @@
 
 <script setup lang="ts">
 import { computed, reactive } from 'vue'
-import { useStore } from 'vuex'
-import { key, type State } from './store'
+import { useConfigStore } from './stores/config'
 
-const store = useStore(key)
+const configStore = useConfigStore()
 
-// Make a reactive copy of the Vuex config
-const config = reactive({ ...store.state.config })
+// Make a reactive copy of the state config
+const config = reactive({ ...configStore.config })
 
 // Two-way computed "bucket" property
 const bucket = computed({
@@ -60,6 +59,7 @@ const bucket = computed({
 })
 
 function updateConfig() {
-    store.commit('updateConfig', { ...config })
+    // TODO: Validate the config and use ValidatedAwsConfig
+    configStore.updateConfig({ ...config })
 }
 </script>

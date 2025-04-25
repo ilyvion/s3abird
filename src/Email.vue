@@ -36,26 +36,26 @@
 
 <script lang="ts" setup>
 import { ref, computed, onMounted } from 'vue'
-import { useStore } from 'vuex'
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import parser, { type ParsedEmail } from './parser.js'
-import type { Address } from 'postal-mime'
 import EmailAddress from './EmailAddress.vue'
-import { key as injectionKey } from './store'
 import { validateAwsConfig } from './config.js'
 import { getCachedEmail, setCachedEmail } from './cache.js'
+import { useEmailStore } from './stores/email.js'
+import { useConfigStore } from './stores/config.js'
 
 const props = defineProps<{
     messageId: string
 }>()
 
-const store = useStore(injectionKey)
+const emailStore = useEmailStore()
+const configStore = useConfigStore()
 
-const email = ref<ParsedEmail | undefined>(store.state.emails.get(props.messageId))
+const email = ref<ParsedEmail | undefined>(emailStore.emails.get(props.messageId))
 const error = ref<string | null>(null)
 
 const key = computed(() => atob(props.messageId))
-const config = computed(() => store.state.config)
+const config = computed(() => configStore.config)
 
 const headers = computed(() =>
     (email.value?.headers || []).sort((a, b) => a.key.localeCompare(b.key))

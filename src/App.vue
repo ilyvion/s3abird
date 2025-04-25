@@ -1,8 +1,3 @@
-<script lang="ts" setup>
-import Settings from './Settings.vue'
-import Navbar from './Navbar.vue'
-import Footer from './Footer.vue'
-</script>
 <template>
     <div class="drawer h-screen">
         <input id="menu-drawer" type="checkbox" class="drawer-toggle" />
@@ -33,13 +28,16 @@ import Footer from './Footer.vue'
         </div>
     </div>
 </template>
+<script lang="ts" setup>
+import Settings from './Settings.vue'
+import Navbar from './Navbar.vue'
+import Footer from './Footer.vue'
+import { watch } from 'vue'
+import { useEffectiveTheme } from './useEffectiveTheme'
 
-<script lang="ts">
-export default {
-    name: 'App',
-}
+const { applyThemeToDocument } = useEffectiveTheme()
+applyThemeToDocument()
 </script>
-
 <style scoped lang="css">
 .container:has(.animate__fadeInLeft, .animate__fadeOutRight) {
     overflow-x: hidden;

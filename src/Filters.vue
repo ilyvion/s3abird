@@ -23,26 +23,25 @@
 
 <script lang="ts" setup>
 import { ref, computed } from 'vue'
-import { useStore } from 'vuex'
 import * as Labels from './labels'
 import type { Label } from './labels'
-import { key } from './store'
+import { useEmailStore } from './stores/email'
 
-const store = useStore(key)
+const emailStore = useEmailStore()
 
 const label = ref('')
 
-const labels = computed(() => store.state.labels)
+const labels = computed(() => emailStore.labels)
 
 function updateLabels() {
     const parsed = Labels.parse(label.value)
     if (parsed) {
-        store.commit('addLabel', parsed)
+        emailStore.addLabel(parsed)
         label.value = ''
     }
 }
 
 function removeLabel(label: Label) {
-    store.commit('removeLabel', label)
+    emailStore.removeLabel(label)
 }
 </script>

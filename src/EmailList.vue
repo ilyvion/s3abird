@@ -62,24 +62,26 @@
 
 <script lang="ts" setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { S3Client, ListObjectsV2Command, GetObjectCommand, type _Object } from '@aws-sdk/client-s3'
 import parser, { type ParsedEmail } from './parser.js'
 import Filters from './Filters.vue'
 import EmailAddress from './EmailAddress.vue'
-import { key as storeKey } from './store'
 import { validateAwsConfig } from './config.js'
 import { getCachedEmail, setCachedEmail } from './cache.js'
+import { useEmailStore } from './stores/email.js'
+import { useConfigStore } from './stores/config.js'
 
-const store = useStore(storeKey)
+const emailStore = useEmailStore()
+const configStore = useConfigStore()
+
 const router = useRouter()
 
 const error = ref<string | null>(null)
 const loading = ref(false)
 
-const config = computed(() => store.state.config)
-const emails = computed<ParsedEmail[]>(() => store.getters.emails)
+const config = computed(() => configStore.config)
+const emails = computed<ParsedEmail[]>(() => emailStore.filteredEmails)
 
 function openEmail(email: ParsedEmail) {
     router.push({ path: `/inbox/${email.key}` })
@@ -137,7 +139,7 @@ async function loadEmails() {
             })
         )
 
-        store.commit('updateEmails', parsedEmails)
+        emailStore.updateEmails(parsedEmails)
     } catch (e: any) {
         error.value = e.message || 'Unknown error while loading emails'
     } finally {
