@@ -29,7 +29,9 @@
             </dl>
         </details>
         <div class="reset my-2">
-            <div class="prose mx-auto" v-html="email.html || email.textAsHtml"></div>
+            <!-- eslint-disable vue/no-v-html -->
+            <div class="prose mx-auto" v-html="email.html || email.textAsHtml" />
+            <!-- eslint-enable vue/no-v-html -->
         </div>
     </div>
 </template>
@@ -99,8 +101,8 @@ onMounted(async () => {
         const parsed = await parser(res.Body, cacheKey)
         await setCachedEmail(cacheKey, parsed)
         email.value = parsed
-    } catch (err: any) {
-        error.value = err.message || 'Unknown error while loading email'
+    } catch (err: unknown) {
+        error.value = err instanceof Error ? err.message : 'Unknown error while loading email'
     }
 })
 </script>

@@ -2,33 +2,33 @@
     <div>
         <h2 class="text-2xl font-semibold">Inbox</h2>
 
-        <Filters class="mb-3"></Filters>
+        <Filters class="mb-3" />
 
-        <div class="alert alert-error text-error-content font-semibold" v-if="error">
+        <div v-if="error" class="alert alert-error text-error-content font-semibold">
             Error: {{ error }}
         </div>
-        <table class="table-hover table" v-if="!(emails?.length > 0) && loading">
+        <table v-if="!(emails?.length > 0) && loading" class="table-hover table">
             <tbody>
                 <tr v-for="index in 10" :key="index">
                     <td class="truncate" style="max-width: 300px">
-                        <div class="skeleton h-6 w-64"></div>
+                        <div class="skeleton h-6 w-64" />
                     </td>
                     <td class="truncate" style="width: 100%; min-width: 300px; max-width: 1px">
                         <div class="flex gap-2">
-                            <div class="skeleton h-6 w-full flex-1"></div>
-                            <div class="skeleton h-6 w-full flex-1/3"></div>
+                            <div class="skeleton h-6 w-full flex-1" />
+                            <div class="skeleton h-6 w-full flex-1/3" />
                         </div>
                     </td>
                     <td class="text-muted text-right text-nowrap">
-                        <div class="skeleton h-6 w-32"></div>
+                        <div class="skeleton h-6 w-32" />
                     </td>
                 </tr>
             </tbody>
         </table>
-        <h3 class="text-neutral-500" v-if="!loading && emails && emails.length == 0">
+        <h3 v-if="!loading && emails && emails.length == 0" class="text-neutral-500">
             There's nothing in here
         </h3>
-        <table class="block md:table" v-if="emails && emails.length > 0">
+        <table v-if="emails && emails.length > 0" class="block md:table">
             <thead class="hidden md:table-header-group">
                 <tr>
                     <th>From</th>
@@ -39,8 +39,9 @@
             <tbody class="block md:table-row-group">
                 <tr
                     v-for="email in emails"
-                    @click="openEmail(email)"
+                    :key="email.key"
                     class="hover:bg-base-300 block cursor-pointer max-sm:m-2 max-sm:rounded-2xl max-sm:border max-sm:border-neutral-300 max-sm:p-2 max-sm:shadow-sm md:table-row"
+                    @click="openEmail(email)"
                 >
                     <td class="block truncate md:table-cell" style="max-width: 300px">
                         <EmailAddress :address="email.from" />
@@ -65,7 +66,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { S3Client, ListObjectsV2Command, GetObjectCommand, type _Object } from '@aws-sdk/client-s3'
 import parser, { type ParsedEmail } from './parser.js'
-import Filters from './Filters.vue'
+import Filters from './FilterList.vue'
 import EmailAddress from './EmailAddress.vue'
 import { validateAwsConfig } from './config.js'
 import { getCachedEmail, setCachedEmail } from './cache.js'
@@ -140,8 +141,8 @@ async function loadEmails() {
         )
 
         emailStore.updateEmails(parsedEmails)
-    } catch (e: any) {
-        error.value = e.message || 'Unknown error while loading emails'
+    } catch (e: unknown) {
+        error.value = e instanceof Error ? e.message : 'Unknown error while loading emails'
     } finally {
         loading.value = false
     }

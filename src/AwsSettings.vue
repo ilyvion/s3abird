@@ -2,34 +2,34 @@
     <form class="flex gap-4 md:gap-2" @submit.prevent="updateConfig">
         <label class="floating-label">
             <input
+                v-model="config.aws_region"
                 class="input"
                 placeholder="AWS Region"
                 aria-label="AWS Region"
-                v-model="config.aws_region"
             />
             <span>AWS Region</span>
         </label>
         <label class="floating-label">
-            <input class="input" placeholder="S3 Bucket" aria-label="S3 Bucket" v-model="bucket" />
+            <input v-model="bucket" class="input" placeholder="S3 Bucket" aria-label="S3 Bucket" />
             <span>S3 Bucket</span>
         </label>
         <label class="floating-label">
             <input
+                v-model="config.aws_access_key_id"
                 class="input"
                 type="password"
                 placeholder="AWS Access Key Id"
                 aria-label="AWS Access Key Id"
-                v-model="config.aws_access_key_id"
             />
             <span>AWS Access Key Id</span>
         </label>
         <label class="floating-label">
             <input
+                v-model="config.aws_secret_access_key"
                 class="input"
                 type="password"
                 placeholder="AWS Secret Access Key"
                 aria-label="AWS Secret Access Key"
-                v-model="config.aws_secret_access_key"
             />
             <span>AWS Access Key Id</span>
         </label>

@@ -1,5 +1,21 @@
 {
     "tailwindCSS.includeLanguages": {
         "*.vue": "html"
-    }
+    },
+    "eslint.enable": true,
+    "eslint.nodePath": "./node_modules",
+    "eslint.validate": ["javascript", "vue", "typescript"],
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+    },
+    "eslint.options": {
+        "overrideConfigFile": "eslint.config.js"
+    },
+    "[vue]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "editor.formatOnSave": true
 }

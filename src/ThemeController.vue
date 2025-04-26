@@ -6,6 +6,7 @@
                 'text-yellow-500 drop-shadow drop-shadow-yellow-400/75': effectiveTheme === 'light',
             }"
             aria-label="Set light theme"
+            title="Set light theme"
             @click="themeStore.updateTheme('light')"
         >
             <svg
@@ -30,6 +31,7 @@
             type="checkbox"
             class="toggle"
             aria-label="Toggle theme"
+            :title="'Current theme: ' + themeStore.theme + ', next theme: ' + themeStore.nextTheme"
             @change="themeStore.cycleTheme"
         />
         <button
@@ -39,6 +41,7 @@
                     effectiveTheme === 'dark',
             }"
             aria-label="Set dark theme"
+            title="Set dark theme"
             @click="themeStore.updateTheme('dark')"
         >
             <svg
@@ -52,17 +55,16 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
             >
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
             </svg>
         </button>
     </div>
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref, watch } from 'vue'
+import { ref } from 'vue'
 import { useThemeStore } from './stores/theme'
 import { useThreeStateCheckbox } from './useThreeStateCheckbox'
-import { storeToRefs } from 'pinia'
 import { useEffectiveTheme } from './useEffectiveTheme'
 
 const themeStore = useThemeStore()

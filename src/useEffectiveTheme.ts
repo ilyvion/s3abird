@@ -1,4 +1,4 @@
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useThemeStore, type Theme, type ThemeName } from './stores/theme'
 
 const systemPrefersDark = ref(false)

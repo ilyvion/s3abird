@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { createPinia } from 'pinia'
 
 import App from './App.vue'
-import Email from './Email.vue'
+import Email from './EmailItem.vue'
 import EmailList from './EmailList.vue'
 
 import 'animate.css'

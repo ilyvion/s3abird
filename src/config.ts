@@ -27,7 +27,9 @@ export function validateAwsConfig(
 ): ValidatedAwsConfigResult {
     if (!config) {
         errorRef.value = 'Missing settings'
-        loadingRef && (loadingRef.value = false)
+        if (loadingRef) {
+            loadingRef.value = false
+        }
         return { result: false }
     }
 
@@ -35,19 +37,25 @@ export function validateAwsConfig(
 
     if (!aws_region) {
         errorRef.value = 'Missing AWS region in settings'
-        loadingRef && (loadingRef.value = false)
+        if (loadingRef) {
+            loadingRef.value = false
+        }
         return { result: false }
     }
 
     if (!aws_access_key_id || !aws_secret_access_key) {
         errorRef.value = 'Please set AWS credentials in settings'
-        loadingRef && (loadingRef.value = false)
+        if (loadingRef) {
+            loadingRef.value = false
+        }
         return { result: false }
     }
 
     if (!bucket) {
         errorRef.value = 'Missing bucket name in settings'
-        loadingRef && (loadingRef.value = false)
+        if (loadingRef) {
+            loadingRef.value = false
+        }
         return { result: false }
     }
 

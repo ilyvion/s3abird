@@ -1,4 +1,4 @@
-import { watch, onMounted, onBeforeUnmount, type Ref } from 'vue'
+import { watch, onMounted, type Ref } from 'vue'
 
 /**
  * Keeps a checkbox's .checked and .indeterminate in sync with a 3-state source

@@ -23,16 +23,17 @@
         </div>
 
         <div class="drawer-side z-20 lg:hidden">
-            <label for="menu-drawer" aria-label="close menu" class="drawer-overlay"></label>
-            <div class="bg-base-300 h-screen w-[90%]"><Settings class="m-2 flex-col" /></div>
+            <label for="menu-drawer" aria-label="close menu" class="drawer-overlay" />
+            <div class="bg-base-300 h-screen w-[90%]">
+                <Settings class="m-2 flex-col" />
+            </div>
         </div>
     </div>
 </template>
 <script lang="ts" setup>
-import Settings from './Settings.vue'
-import Navbar from './Navbar.vue'
-import Footer from './Footer.vue'
-import { watch } from 'vue'
+import Settings from './AwsSettings.vue'
+import Navbar from './MainNavbar.vue'
+import Footer from './MainFooter.vue'
 import { useEffectiveTheme } from './useEffectiveTheme'
 
 const { applyThemeToDocument } = useEffectiveTheme()
