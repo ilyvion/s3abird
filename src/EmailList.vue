@@ -40,17 +40,25 @@
                 <tr
                     v-for="email in emails"
                     :key="email.key"
-                    class="hover:bg-base-300 block cursor-pointer max-sm:m-2 max-sm:rounded-2xl max-sm:border max-sm:border-neutral-300 max-sm:p-2 max-sm:shadow-sm md:table-row"
+                    class="hover:bg-base-300 max-md:border-b-base-content/5 block cursor-pointer max-md:border-b max-md:py-2 max-md:shadow-sm max-md:last:border-b-0 md:table-row"
                     @click="openEmail(email)"
                 >
-                    <td class="block truncate md:table-cell" style="max-width: 300px">
+                    <td
+                        class="block truncate max-md:font-semibold md:table-cell"
+                        style="max-width: 300px"
+                    >
                         <EmailAddress :address="email.from" />
                     </td>
                     <td
-                        class="block truncate max-sm:text-xs md:table-cell md:w-full md:max-w-[1px] md:min-w-[300px]"
+                        class="block truncate max-md:text-xs md:table-cell md:w-full md:max-w-[1px] md:min-w-[300px]"
                     >
-                        {{ email.subject || '(no subject)'
-                        }}<span class="text-neutral-400">&nbsp;-&nbsp;{{ email.text }}</span>
+                        <span class="max-md:font-semibold">{{
+                            email.subject || '(no subject)'
+                        }}</span
+                        ><span class="text-neutral-400"
+                            ><span class="max-md:hidden">&nbsp;-&nbsp;</span
+                            ><br class="md:hidden" />{{ email.text }}</span
+                        >
                     </td>
                     <td class="block text-xs text-nowrap md:table-cell md:text-right">
                         {{ email.date ? new Date(email.date).toLocaleString() : '' }}

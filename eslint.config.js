@@ -3,8 +3,7 @@ import tsParser from '@typescript-eslint/parser'
 
 import vue from 'eslint-plugin-vue'
 
-import pluginPrettier from 'eslint-plugin-prettier'
-import prettier from 'eslint-config-prettier'
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
 
 export default [
     {
@@ -47,23 +46,21 @@ export default [
     withOverrides(vue.configs['flat/recommended'][2], {}),
     withOverrides(vue.configs['flat/recommended'][3], {}),
     withOverrides(vue.configs['flat/recommended'][4], {}),
+    withOverrides(eslintPluginPrettierRecommended, {
+        rules: {
+            'prettier/prettier': [
+                'error',
+                {
+                    endOfLine: 'auto',
+                },
+                {
+                    usePrettierrc: true,
+                },
+            ],
+        },
+    }),
     {
         ignores: ['node_modules/*', 'dist/*', '*.config.*'],
-    },
-    {
-        plugins: {
-            prettier: pluginPrettier,
-        },
-        rules: {
-            'prettier/prettier': 'warn',
-            'vue/html-indent': 'off',
-            'vue/html-closing-bracket-newline': 'off',
-            'vue/max-attributes-per-line': 'off',
-            'vue/singleline-html-element-content-newline': 'off',
-            'vue/multiline-html-element-content-newline': 'off',
-            'vue/html-self-closing': 'off',
-            'vue/first-attribute-linebreak': 'off',
-        },
     },
 ]
 
