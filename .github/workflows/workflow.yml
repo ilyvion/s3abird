@@ -1,0 +1,78 @@
+name: Build and Deploy
+
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+    workflow_dispatch:
+
+jobs:
+    build:
+        runs-on: ubuntu-24.04-arm
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: ilyvion-contrib/ci-utils/container-build@main
+              with:
+                  image: s3abird
+
+            - name: Upload artifact
+              if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+              uses: actions/upload-artifact@v4
+              with:
+                  name: s3abird-tar
+                  path: s3abird.tar
+
+    deploy:
+        runs-on: ubuntu-latest
+        needs: build
+        env:
+            GH_TOKEN: ${{ github.token }}
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        steps:
+            - uses: ilyvion-contrib/ci-utils/create-deployment@main
+              id: deployment
+              with:
+                  ref: ${{ github.ref }}
+                  sha: ${{ github.sha }}
+                  environment: 'staging'
+
+            - name: Download artifact
+              uses: actions/download-artifact@v4
+              with:
+                  name: s3abird-tar
+
+            - uses: ilyvion-contrib/ci-utils/setup-ssh@main
+              with:
+                  ssh_known_hosts: ${{ secrets.deploy_known_hosts }}
+                  ssh_private_key: ${{ secrets.deploy_key }}
+                  ssh_host: ${{ secrets.deploy_target }}
+                  ssh_port: ${{ secrets.deploy_port }}
+
+            - uses: ilyvion-contrib/ci-utils/container-deploy@main
+              with:
+                  ssh_user: ${{ secrets.deploy_user }}
+                  ssh_host: ${{ secrets.deploy_target }}
+                  ssh_port: ${{ secrets.deploy_port }}
+                  image: s3abird
+
+            - name: Mark deployment as success
+              if: success()
+              run: |
+                  gh api \
+                      -X POST \
+                      -H "Accept: application/vnd.github+json" \
+                      repos/${{ github.repository }}/deployments/${{ steps.deployment.outputs.deployment_id }}/statuses \
+                      -f state="success"
+
+            - name: Mark deployment as failure
+              if: failure()
+              run: |
+                  gh api \
+                      -X POST \
+                      -H "Accept: application/vnd.github+json" \
+                      repos/${{ github.repository }}/deployments/${{ steps.deployment.outputs.deployment_id }}/statuses \
+                      -f state="failure"
