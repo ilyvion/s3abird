@@ -134,7 +134,9 @@ async function loadEmails() {
                 if (cached) return cached
 
                 const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: item.Key }))
-                const parsed = await parser(res.Body, cacheKey)
+                const body: ReadableStream | undefined = res.Body?.transformToWebStream()
+                if (!body) throw new Error('No body in response')
+                const parsed = await parser(body, cacheKey)
                 await setCachedEmail(cacheKey, parsed)
                 return parsed
             })

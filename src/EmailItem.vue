@@ -45,6 +45,7 @@ import { validateAwsConfig } from './config.js'
 import { getCachedEmail, setCachedEmail } from './cache.js'
 import { useEmailStore } from './stores/email.js'
 import { useConfigStore } from './stores/config.js'
+import type { RawEmail } from 'postal-mime'
 
 const props = defineProps<{
     messageId: string
@@ -98,7 +99,12 @@ onMounted(async () => {
 
     try {
         const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key.value }))
-        const parsed = await parser(res.Body, cacheKey)
+        const body: ReadableStream | undefined = res.Body?.transformToWebStream()
+        if (!body) {
+            error.value = 'No body in response'
+            return
+        }
+        const parsed = await parser(body, cacheKey)
         await setCachedEmail(cacheKey, parsed)
         email.value = parsed
     } catch (err: unknown) {
