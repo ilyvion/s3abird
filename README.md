@@ -82,4 +82,4 @@ Feel free to submit pull requests - doesn't have to be limited to just the featu
 the roadmap.
 
 If there are particular features you would like to see you can also
-[submit a ticket](https://github.com/mewa/s3abird/issues/new).
+[submit a ticket](https://github.com/ilyvion/s3abird/issues/new).
