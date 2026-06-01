@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-01
+
 ### Added
 
 - Support for multiple S3 buckets via a credentials/buckets hierarchy in settings, with optional labels per credential set and per bucket.
@@ -74,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Original version of the code as forked from <https://github.com/LeadSigma/s3abird>, itself a fork of <https://github.com/mewa/s3abird> with a single extra commit. Version number is arbitrary.
 
-[Unreleased]: https://github.com/ilyvion/s3abird/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/ilyvion/s3abird/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/ilyvion/s3abird/compare/v0.2.0..v0.3.0
 [0.2.0]: https://github.com/ilyvion/s3abird/compare/forked...v0.2.0
 [0.1.0]: https://github.com/ilyvion/s3abird/compare/a1d566eafbb31e8b0719eaf5fcd2b679fb5c4f2a...forked
