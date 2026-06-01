@@ -7,7 +7,7 @@
         <div v-if="error" class="alert alert-error text-error-content font-semibold">
             Error: {{ error }}
         </div>
-        <table v-if="!(emails?.length > 0) && loading" class="table-hover table">
+        <table v-if="!(pagedEmails?.length > 0) && loading" class="table-hover table">
             <tbody>
                 <tr v-for="index in 10" :key="index">
                     <td class="truncate" style="max-width: 300px">
@@ -25,10 +25,10 @@
                 </tr>
             </tbody>
         </table>
-        <h3 v-if="!loading && emails && emails.length == 0" class="text-neutral-500">
+        <h3 v-if="!loading && pagedEmails && pagedEmails.length == 0" class="text-neutral-500">
             There's nothing in here
         </h3>
-        <table v-if="emails && emails.length > 0" class="block md:table">
+        <table v-if="pagedEmails && pagedEmails.length > 0" class="block md:table">
             <thead class="hidden md:table-header-group">
                 <tr>
                     <th>From</th>
@@ -38,7 +38,7 @@
             </thead>
             <tbody class="block md:table-row-group">
                 <tr
-                    v-for="email in emails"
+                    v-for="email in pagedEmails"
                     :key="email.key"
                     class="hover:bg-base-300 max-md:border-b-base-content/5 block cursor-pointer max-md:border-b max-md:py-2 max-md:shadow-sm max-md:last:border-b-0 md:table-row"
                     @click="openEmail(email)"
@@ -66,6 +66,21 @@
                 </tr>
             </tbody>
         </table>
+        <div v-if="numPages > 1" class="join mt-4 flex justify-center">
+            <button class="join-item btn" :disabled="currentPage <= 1" @click="currentPage--">
+                «
+            </button>
+            <button class="join-item btn pointer-events-none">
+                Page {{ currentPage }} of {{ numPages }}
+            </button>
+            <button
+                class="join-item btn"
+                :disabled="currentPage >= numPages"
+                @click="currentPage++"
+            >
+                »
+            </button>
+        </div>
     </div>
 </template>
 
@@ -80,6 +95,7 @@ import { validateEffectiveConfig, makeCacheKey, type EffectiveBucketConfig } fro
 import { getCachedEmail, setCachedEmail } from './cache.js'
 import { useEmailStore } from './stores/email.js'
 import { useConfigStore } from './stores/config.js'
+import { filterAndSortByDate, getPage, totalPages, PAGE_SIZE } from './s3Utils.js'
 
 const emailStore = useEmailStore()
 const configStore = useConfigStore()
@@ -88,11 +104,41 @@ const router = useRouter()
 
 const error = ref<string | null>(null)
 const loading = ref(false)
+const currentPage = ref(1)
 
-const emails = computed<ParsedEmail[]>(() => emailStore.filteredEmails)
+const filteredEmails = computed<ParsedEmail[]>(() => emailStore.filteredEmails)
+const numPages = computed(() => totalPages(filteredEmails.value.length, PAGE_SIZE))
+const pagedEmails = computed(() => getPage(filteredEmails.value, currentPage.value, PAGE_SIZE))
+
+watch(filteredEmails, () => {
+    currentPage.value = 1
+})
 
 function openEmail(email: ParsedEmail) {
     router.push({ path: `/inbox/${email.key}` })
+}
+
+async function listAllObjects(
+    s3: S3Client,
+    bucket: string,
+    prefix: string | undefined
+): Promise<_Object[]> {
+    const objects: _Object[] = []
+    let continuationToken: string | undefined
+
+    do {
+        const response = await s3.send(
+            new ListObjectsV2Command({
+                Bucket: bucket,
+                Prefix: prefix,
+                ContinuationToken: continuationToken,
+            })
+        )
+        objects.push(...(response.Contents ?? []))
+        continuationToken = response.IsTruncated ? response.NextContinuationToken : undefined
+    } while (continuationToken)
+
+    return objects
 }
 
 async function loadFromBucket(bucketConfig: EffectiveBucketConfig): Promise<ParsedEmail[]> {
@@ -111,11 +157,7 @@ async function loadFromBucket(bucketConfig: EffectiveBucketConfig): Promise<Pars
         },
     })
 
-    const listResponse = await s3.send(new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix }))
-
-    const sorted = (listResponse.Contents ?? [])
-        .filter((obj): obj is _Object & { LastModified: Date } => obj.LastModified instanceof Date)
-        .sort((a, b) => b.LastModified.getTime() - a.LastModified.getTime())
+    const sorted = filterAndSortByDate(await listAllObjects(s3, bucket, prefix))
 
     return Promise.all(
         sorted.map(async (item) => {

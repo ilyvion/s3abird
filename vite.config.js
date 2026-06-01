@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { createHtmlPlugin } from 'vite-plugin-html'
 import tailwindcss from '@tailwindcss/vite'
+import { analyzer } from 'vite-bundle-analyzer'
 
 export default defineConfig({
     plugins: [
@@ -14,6 +15,7 @@ export default defineConfig({
             },
         }),
         tailwindcss(),
+        analyzer({ analyzerMode: 'static' }),
     ],
     server: {
         port: 3000,
