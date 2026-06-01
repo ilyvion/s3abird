@@ -20,7 +20,7 @@ jobs:
               with:
                   version: latest
 
-            - name: Build image (with GHA cache)
+            - name: Build image
               uses: docker/build-push-action@v6
               with:
                   context: .
