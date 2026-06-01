@@ -10,9 +10,6 @@ export type ParsedEmail = Email & {
 
 export default async function (email: RawEmail, emailKey: string): Promise<ParsedEmail> {
     const parsed = await PostalMime.parse(email)
-    if (parsed.text) {
-        parsed.text = DOMPurify.sanitize(parsed.text)
-    }
     if (parsed.html) {
         parsed.html = DOMPurify.sanitize(parsed.html)
     }
