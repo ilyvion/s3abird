@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support for multiple S3 buckets via a credentials/buckets hierarchy in settings, with optional labels per credential set and per bucket.
+- New `BucketSelector` component to switch between configured buckets when multiple are available.
+- Email list pagination (25 emails per page, applied after filtering).
+- Email list caching so previously loaded results are shown immediately on revisit, with a manual refresh button to reload from S3.
+- Vitest test suite with tests for S3 utilities and the email store.
+
+### Changed
+
+- Settings schema restructured: the flat single-bucket config (`aws_region`, `aws_access_key_id`, `aws_secret_access_key`, `bucket`) is automatically migrated to the new `credentials[].buckets[]` hierarchy on first load.
+- Email list layout improved for small screen sizes.
+
 ## [0.2.0] - 2025-04-26
 
 ### Added
