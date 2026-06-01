@@ -7,11 +7,12 @@ import type { Address } from 'postal-mime'
 import { computed } from 'vue'
 
 const props = defineProps<{
-    address: Address
+    address?: Address
 }>()
 
 const formattedAddress = computed(() => {
-    const a = props.address || {}
+    if (!props.address) return ''
+    const a = props.address
     return `${a.name || ''} ${a.address ? `<${a.address}>` : ''}`
 })
 </script>

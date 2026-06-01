@@ -18,7 +18,7 @@ const From = (addr: string): Label => {
     return {
         type: 'from',
         value: addr,
-        f: (e: Email) => address_contains(e.from, addr),
+        f: (e: Email) => e.from !== undefined && address_contains(e.from, addr),
     }
 }
 
