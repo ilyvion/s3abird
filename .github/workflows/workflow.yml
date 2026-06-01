@@ -15,9 +15,21 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
-            - uses: ilyvion-contrib/ci-utils/container-build@main
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
               with:
-                  image: s3abird
+                  version: latest
+
+            - name: Build image (with GHA cache)
+              uses: docker/build-push-action@v6
+              with:
+                  context: .
+                  tags: s3abird:staging
+                  load: true
+
+            - name: Save Docker image
+              shell: bash
+              run: docker save -o s3abird.tar s3abird:staging
 
             - name: Upload artifact
               if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
