@@ -6,16 +6,16 @@
             <div class="bg-base-200 container mx-auto flex-grow overflow-auto">
                 <div class="bg-light rounded px-3 py-2">
                     <router-view v-slot="{ Component }">
-                        <keep-alive include="EmailList">
-                            <transition
-                                name="fade"
-                                mode="out-in"
-                                enter-active-class="animate__animated animate__fadeInLeft animate__faster overflow-x-hidden"
-                                leave-active-class="animate__animated animate__fadeOutRight animate__faster overflow-x-hidden"
-                            >
+                        <transition
+                            name="fade"
+                            mode="out-in"
+                            enter-active-class="animate__animated animate__fadeInLeft animate__faster overflow-x-hidden"
+                            leave-active-class="animate__animated animate__fadeOutRight animate__faster overflow-x-hidden"
+                        >
+                            <keep-alive include="EmailList">
                                 <component :is="Component" />
-                            </transition>
-                        </keep-alive>
+                            </keep-alive>
+                        </transition>
                     </router-view>
                 </div>
             </div>

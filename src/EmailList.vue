@@ -1,6 +1,31 @@
 <template>
     <div>
-        <h2 class="text-2xl font-semibold">Inbox</h2>
+        <div class="mb-1 flex items-center gap-2">
+            <h2 class="text-2xl font-semibold">Inbox</h2>
+            <button
+                class="btn btn-ghost btn-sm"
+                :class="{ 'animate-spin': loading }"
+                :disabled="loading"
+                aria-label="Refresh inbox"
+                title="Refresh inbox"
+                @click="loadEmails(true)"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                    <path d="M21 3v5h-5" />
+                </svg>
+            </button>
+        </div>
 
         <Filters class="mb-3" />
 
@@ -177,12 +202,14 @@ async function loadFromBucket(bucketConfig: EffectiveBucketConfig): Promise<Pars
     )
 }
 
-async function loadEmails() {
+async function loadEmails(force = false) {
     const activeBucket = configStore.activeBucket
     if (!activeBucket) {
         loading.value = false
         return
     }
+
+    if (!force && emailStore.emails.size > 0) return
 
     error.value = null
     loading.value = true
@@ -203,7 +230,7 @@ onMounted(() => {
 watch(
     () => configStore.activeBucket,
     () => {
-        loadEmails()
+        loadEmails(true)
     }
 )
 </script>
