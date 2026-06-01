@@ -26,7 +26,7 @@ const Subject = (text: string): Label => {
     return {
         type: 'subject',
         value: text,
-        f: (e: Email) => e.subject?.indexOf(text) !== -1,
+        f: (e: Email) => (e.subject?.indexOf(text) ?? -1) !== -1,
     }
 }
 
