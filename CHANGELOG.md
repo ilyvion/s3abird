@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Subject label filter no longer incorrectly matches emails that have no subject line.
+- Email detail view now displays an error message instead of a blank page when an email fails to load
 
 ## [0.3.0] - 2026-06-01
 

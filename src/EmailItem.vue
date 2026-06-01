@@ -34,6 +34,9 @@
             <!-- eslint-enable vue/no-v-html -->
         </div>
     </div>
+    <div v-else-if="error" class="alert alert-error text-error-content font-semibold">
+        Error: {{ error }}
+    </div>
 </template>
 
 <script lang="ts" setup>
