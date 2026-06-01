@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Subject label filter no longer incorrectly matches emails that have no subject line.
 - Email detail view now displays an error message instead of a blank page when an email fails to load
+- `makeCacheKey` no longer throws on S3 keys containing non-Latin-1 characters
 
 ## [0.3.0] - 2026-06-01
 

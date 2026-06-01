@@ -145,14 +145,17 @@ export function validateEffectiveConfig(
 }
 
 export function makeCacheKey(config: EffectiveBucketConfig, s3Key: string): string {
-    return btoa(`${config.aws_region}|${config.bucket}|${s3Key}`)
+    const bytes = new TextEncoder().encode(`${config.aws_region}|${config.bucket}|${s3Key}`)
+    return btoa(String.fromCharCode(...bytes))
 }
 
 export function decodeCacheKey(
     cacheKey: string
 ): { aws_region: string; bucket: string; s3Key: string } | null {
     try {
-        const decoded = atob(cacheKey)
+        const decoded = new TextDecoder().decode(
+            Uint8Array.from(atob(cacheKey), (c) => c.charCodeAt(0))
+        )
         const parts = decoded.split('|')
         if (parts.length < 3) return null
         const [aws_region, bucket, ...keyParts] = parts
