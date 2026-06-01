@@ -169,7 +169,7 @@ async function listAllObjects(
 async function loadFromBucket(bucketConfig: EffectiveBucketConfig): Promise<ParsedEmail[]> {
     const errRef = ref<string | null>(null)
     const result = validateEffectiveConfig(bucketConfig, errRef)
-    if (!result.result) return []
+    if (!result.result) throw new Error(errRef.value ?? 'Invalid bucket configuration')
 
     const { aws_region, aws_access_key_id, aws_secret_access_key, bucket, prefix } =
         result.validatedConfig

@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Email detail view now displays an error message instead of a blank page when an email fails to load
 - `makeCacheKey` no longer throws on S3 keys containing non-Latin-1 characters
 - Corrupted `localStorage` data no longer crashes the app on startup; invalid JSON is treated as absent config
+- Inbox now shows an error message when bucket configuration fails validation, instead of silently showing an empty list
 
 ## [0.3.0] - 2026-06-01
 
