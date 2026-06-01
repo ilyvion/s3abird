@@ -1,14 +1,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
 
 @import 'tailwindcss';
-@plugin "@tailwindcss/typography";
-@plugin "daisyui" {
+@plugin '@tailwindcss/typography';
+@plugin 'daisyui' {
     themes: false;
 }
 
-@plugin "./catppuccinTheme.latte.ts";
-@plugin "./catppuccinTheme.frappe.ts";
+@plugin './catppuccinTheme.latte.ts';
+@plugin './catppuccinTheme.frappe.ts';
 
 @theme {
     --default-font-family: 'Outfit';
+}
+
+.fabx {
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    display: inline-block;
+    font-style: normal;
+    font-variant: normal;
+    text-rendering: auto;
+    font-family: 'Font Awesome 5 Brands';
+    font-weight: 400;
 }

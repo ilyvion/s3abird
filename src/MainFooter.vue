@@ -14,9 +14,9 @@
                 <a class="link" href="https://marcinchmiel.com">Marcin&nbsp;Chmiel</a>
             </span>
         </div>
-        <div>
-            <a class="link flex items-center" href="https://github.com/ilyvion/s3abird"
-                ><i class="fab fa-github" />&nbsp;Contribute</a
+        <div class="flex items-center">
+            <a class="link flex gap-1 no-underline" href="https://github.com/ilyvion/s3abird"
+                ><i class="fabx fa-github" />Contribute</a
             >
         </div>
     </footer>
