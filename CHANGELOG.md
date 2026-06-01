@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-04-26
+
+### Added
+
+- Vite configuration (`vite.config.js`) for Vue 2 with modern build output.
+- Support for rewriting `cid:` inline image references to base64 `data:` URIs.
+- Fallback HTML rendering from plain text using a `textAsHtml` equivalent function.
+- `Dockerfile` for using the project with Docker
+- Migrated full codebase to TypeScript with strict type checking (`vue-tsc`)
+- Ensured all Vue 3 components are properly typed, including `props`, `data`, and `methods`
+- Theme support for light/dark modes
+- New `ThemeController.vue` with three-state toggle and theme-select buttons
+- `useEffectiveTheme()` composable to compute and apply theme reactively
+- `useThreeStateCheckbox()` composable for synced indeterminate checkbox state
+- Pinia as the new state management solution, replacing Vuex
+- ESLint configuration aligned with Vue standards, with clean baseline across the codebase
+- Husky pre-commit hook enforcing linting and conventional commit message format
+- GitHub Actions workflows for CI build and automatic deployment
+
 ### Changed
 
 - Migrated from Gulp-based build system to Vite with native ES modules and modern tooling.
@@ -22,6 +41,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the ability to view all e-mail headers
 - Migrated all existing Vuex store usages (`Emails`, `Config`, `Theme`) to Pinia stores
 - Refactored `App.vue`, `Navbar.vue`, `EmailList.vue`, `Filters.vue`, and `Settings.vue` to use Pinia
+- Renamed Vue components for clarity: `Settings` → `AwsSettings`, `Email` → `EmailItem`, `Filters` → `FilterList`, `Footer` → `MainFooter`, `Navbar` → `MainNavbar`
+- Updated README with corrected CORS policy configuration for S3 buckets
+
+### Fixed
+
+- Type checking for `postal-mime` parse result in `EmailItem` and `EmailList` components.
 
 ### Removed
 
@@ -32,23 +57,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bootstrap, jQuery, and Popper.js `<script>` tags from `index.html`
 - All legacy Bootstrap classes and layout dependencies
 
-### Added
-
-- Vite configuration (`vite.config.js`) for Vue 2 with modern build output.
-- Support for rewriting `cid:` inline image references to base64 `data:` URIs.
-- Fallback HTML rendering from plain text using a `textAsHtml` equivalent function.
-- `Dockerfile` for using the project with Docker
-- Migrated full codebase to TypeScript with strict type checking (`vue-tsc`)
-- Ensured all Vue 3 components are properly typed, including `props`, `data`, and `methods`
-- Theme support for light/dark modes
-- New `ThemeController.vue` with three-state toggle and theme-select buttons
-- `useEffectiveTheme()` composable to compute and apply theme reactively
-- `useThreeStateCheckbox()` composable for synced indeterminate checkbox state
-- Pinia as the new state management solution, replacing Vuex
-
 ## [0.1.0] - 2022-02-14
 
 Original version of the code as forked from <https://github.com/LeadSigma/s3abird>, itself a fork of <https://github.com/mewa/s3abird> with a single extra commit. Version number is arbitrary.
 
-[unreleased]: https://github.com/ilyvion/s3abird/compare/forked...HEAD
+[unreleased]: https://github.com/ilyvion/s3abird/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/ilyvion/s3abird/compare/forked...v0.2.0
 [0.1.0]: https://github.com/ilyvion/s3abird/compare/a1d566eafbb31e8b0719eaf5fcd2b679fb5c4f2a...forked
