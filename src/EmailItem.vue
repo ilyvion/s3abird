@@ -41,11 +41,10 @@ import { ref, computed, onMounted } from 'vue'
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import parser, { type ParsedEmail } from './parser.js'
 import EmailAddress from './EmailAddress.vue'
-import { validateAwsConfig } from './config.js'
+import { validateEffectiveConfig, decodeCacheKey } from './config.js'
 import { getCachedEmail, setCachedEmail } from './cache.js'
 import { useEmailStore } from './stores/email.js'
 import { useConfigStore } from './stores/config.js'
-import type { RawEmail } from 'postal-mime'
 
 const props = defineProps<{
     messageId: string
@@ -57,33 +56,38 @@ const configStore = useConfigStore()
 const email = ref<ParsedEmail | undefined>(emailStore.emails.get(props.messageId))
 const error = ref<string | null>(null)
 
-const key = computed(() => atob(props.messageId))
-const config = computed(() => configStore.config)
-
 const headers = computed(() =>
     (email.value?.headers || []).sort((a, b) => a.key.localeCompare(b.key))
 )
 
 onMounted(async () => {
-    if (email.value) {
-        // email already loaded
-        return
-    }
+    if (email.value) return
 
-    if (!config.value) {
+    if (configStore.allBuckets.length === 0) {
         error.value = 'Missing settings'
         return
     }
 
-    const result = validateAwsConfig(config.value, error)
-    if (!result.result) {
+    const info = decodeCacheKey(props.messageId)
+    if (!info) {
+        error.value = 'Invalid email ID'
         return
     }
+
+    const bucketConfig = configStore.allBuckets.find(
+        (b) => b.aws_region === info.aws_region && b.bucket === info.bucket
+    )
+    if (!bucketConfig) {
+        error.value = 'Bucket configuration not found'
+        return
+    }
+
+    const result = validateEffectiveConfig(bucketConfig, error)
+    if (!result.result) return
+
     const { aws_region, aws_access_key_id, aws_secret_access_key, bucket } = result.validatedConfig
 
-    const cacheKey = btoa(key.value)
-
-    const cached = await getCachedEmail(cacheKey)
+    const cached = await getCachedEmail(props.messageId)
     if (cached) {
         email.value = cached
         return
@@ -98,14 +102,14 @@ onMounted(async () => {
     })
 
     try {
-        const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key.value }))
+        const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: info.s3Key }))
         const body: ReadableStream | undefined = res.Body?.transformToWebStream()
         if (!body) {
             error.value = 'No body in response'
             return
         }
-        const parsed = await parser(body, cacheKey)
-        await setCachedEmail(cacheKey, parsed)
+        const parsed = await parser(body, props.messageId)
+        await setCachedEmail(props.messageId, parsed)
         email.value = parsed
     } catch (err: unknown) {
         error.value = err instanceof Error ? err.message : 'Unknown error while loading email'

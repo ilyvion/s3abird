@@ -8,6 +8,7 @@
         </div>
         <!-- TODO: Replace this with proper AWS login -->
         <div class="navbar-end w-[unset] flex-shrink lg:flex">
+            <BucketSelector class="mr-2 max-md:hidden" />
             <label for="menu-drawer" aria-label="close menu" class="p-2 lg:hidden"
                 ><i class="fas fa-bars text-2xl"
             /></label>
@@ -19,4 +20,5 @@
 <script lang="ts" setup>
 import Settings from './AwsSettings.vue'
 import ThemeController from './ThemeController.vue'
+import BucketSelector from './BucketSelector.vue'
 </script>

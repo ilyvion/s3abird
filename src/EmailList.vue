@@ -76,7 +76,7 @@ import { S3Client, ListObjectsV2Command, GetObjectCommand, type _Object } from '
 import parser, { type ParsedEmail } from './parser.js'
 import Filters from './FilterList.vue'
 import EmailAddress from './EmailAddress.vue'
-import { validateAwsConfig } from './config.js'
+import { validateEffectiveConfig, makeCacheKey, type EffectiveBucketConfig } from './config.js'
 import { getCachedEmail, setCachedEmail } from './cache.js'
 import { useEmailStore } from './stores/email.js'
 import { useConfigStore } from './stores/config.js'
@@ -89,23 +89,17 @@ const router = useRouter()
 const error = ref<string | null>(null)
 const loading = ref(false)
 
-const config = computed(() => configStore.config)
 const emails = computed<ParsedEmail[]>(() => emailStore.filteredEmails)
 
 function openEmail(email: ParsedEmail) {
     router.push({ path: `/inbox/${email.key}` })
 }
 
-async function loadEmails() {
-    if (!config.value) {
-        loading.value = false
-        return
-    }
+async function loadFromBucket(bucketConfig: EffectiveBucketConfig): Promise<ParsedEmail[]> {
+    const errRef = ref<string | null>(null)
+    const result = validateEffectiveConfig(bucketConfig, errRef)
+    if (!result.result) return []
 
-    const result = validateAwsConfig(config.value, error, loading)
-    if (!result.result) {
-        return
-    }
     const { aws_region, aws_access_key_id, aws_secret_access_key, bucket, prefix } =
         result.validatedConfig
 
@@ -117,40 +111,42 @@ async function loadEmails() {
         },
     })
 
+    const listResponse = await s3.send(new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix }))
+
+    const sorted = (listResponse.Contents ?? [])
+        .filter((obj): obj is _Object & { LastModified: Date } => obj.LastModified instanceof Date)
+        .sort((a, b) => b.LastModified.getTime() - a.LastModified.getTime())
+
+    return Promise.all(
+        sorted.map(async (item) => {
+            if (!item.Key) throw new Error('Missing key')
+
+            const cacheKey = makeCacheKey(bucketConfig, item.Key)
+            const cached = await getCachedEmail(cacheKey)
+            if (cached) return cached
+
+            const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: item.Key }))
+            const body: ReadableStream | undefined = res.Body?.transformToWebStream()
+            if (!body) throw new Error('No body in response')
+            const parsed = await parser(body, cacheKey)
+            await setCachedEmail(cacheKey, parsed)
+            return parsed
+        })
+    )
+}
+
+async function loadEmails() {
+    const activeBucket = configStore.activeBucket
+    if (!activeBucket) {
+        loading.value = false
+        return
+    }
+
     error.value = null
     loading.value = true
 
     try {
-        const listResponse = await s3.send(
-            new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix })
-        )
-
-        const sorted = (listResponse.Contents ?? [])
-            .filter(
-                (obj): obj is _Object & { LastModified: Date } => obj.LastModified instanceof Date
-            )
-            .sort((a, b) => b.LastModified.getTime() - a.LastModified.getTime())
-
-        const parsedEmails = await Promise.all(
-            sorted.map(async (item) => {
-                // 🔐 guard to satisfy TS — should never really happen
-                if (!item.Key) throw new Error('Missing key')
-
-                const cacheKey = btoa(item.Key)
-
-                const cached = await getCachedEmail(cacheKey)
-                if (cached) return cached
-
-                const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: item.Key }))
-                const body: ReadableStream | undefined = res.Body?.transformToWebStream()
-                if (!body) throw new Error('No body in response')
-                const parsed = await parser(body, cacheKey)
-                await setCachedEmail(cacheKey, parsed)
-                return parsed
-            })
-        )
-
-        emailStore.updateEmails(parsedEmails)
+        emailStore.updateEmails(await loadFromBucket(activeBucket))
     } catch (e: unknown) {
         error.value = e instanceof Error ? e.message : 'Unknown error while loading emails'
     } finally {
@@ -159,10 +155,13 @@ async function loadEmails() {
 }
 
 onMounted(() => {
-    if (config.value) loadEmails()
+    if (configStore.activeBucket) loadEmails()
 })
 
-watch(config, () => {
-    loadEmails()
-})
+watch(
+    () => configStore.activeBucket,
+    () => {
+        loadEmails()
+    }
+)
 </script>

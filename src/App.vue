@@ -25,6 +25,7 @@
         <div class="drawer-side z-20 lg:hidden">
             <label for="menu-drawer" aria-label="close menu" class="drawer-overlay" />
             <div class="bg-base-300 h-screen w-[90%]">
+                <BucketSelector class="m-2" />
                 <Settings class="m-2 flex-col" />
             </div>
         </div>
@@ -32,6 +33,7 @@
 </template>
 <script lang="ts" setup>
 import Settings from './AwsSettings.vue'
+import BucketSelector from './BucketSelector.vue'
 import Navbar from './MainNavbar.vue'
 import Footer from './MainFooter.vue'
 import { useEffectiveTheme } from './useEffectiveTheme'
