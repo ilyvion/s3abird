@@ -79,8 +79,12 @@ function attachmentToBase64(att: Attachment): string {
         binary = new Uint8Array(att.content)
     }
 
-    // Encode to base64
-    return btoa(binary.reduce((data, byte) => data + String.fromCharCode(byte), ''))
+    // Encode to base64 in chunks to avoid O(n²) string concatenation
+    const CHUNK = 65536
+    let str = ''
+    for (let i = 0; i < binary.length; i += CHUNK)
+        str += String.fromCharCode(...binary.subarray(i, i + CHUNK))
+    return btoa(str)
 }
 
 function textToHtml(text: string | undefined): string {

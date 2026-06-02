@@ -67,6 +67,33 @@ iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAA
             const result = await parse(RAW_EMAIL_WITH_INLINE_IMAGE, 'test-key')
             expect(result.html).not.toContain('<script>')
         })
+
+        it('correctly base64-encodes binary (non-base64) attachments', async () => {
+            // Uses 8bit CTE so the attachment goes through the Uint8Array → btoa path
+            const RAW_EMAIL_BINARY_ATTACHMENT = [
+                'MIME-Version: 1.0',
+                'From: sender@example.com',
+                'To: recipient@example.com',
+                'Subject: Binary attachment test',
+                'Content-Type: multipart/related; boundary="==sep=="',
+                '',
+                '--==sep==',
+                'Content-Type: text/html; charset=utf-8',
+                '',
+                '<p>Image: <img src="cid:bin001@test.example"></p>',
+                '--==sep==',
+                'Content-Type: image/png',
+                'Content-ID: <bin001@test.example>',
+                'Content-Transfer-Encoding: 8bit',
+                '',
+                '\x89PNG\r\n',
+                '--==sep==--',
+            ].join('\r\n')
+
+            const result = await parse(RAW_EMAIL_BINARY_ATTACHMENT, 'test-key')
+            expect(result.html).not.toContain('cid:bin001@test.example')
+            expect(result.html).toContain('data:image/png;base64,')
+        })
     })
 
     describe('textAsHtml', () => {
