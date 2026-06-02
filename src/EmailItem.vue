@@ -58,7 +58,9 @@ const email = ref<ParsedEmail | undefined>()
 const error = ref<string | null>(null)
 
 const headers = computed(() =>
-    (email.value?.headers || []).sort((a, b) => a.key.localeCompare(b.key))
+    (email.value?.headers || [])
+        .slice()
+        .sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
 )
 
 onMounted(async () => {

@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Inline images (CID attachments) are no longer silently stripped; the early `DOMPurify.sanitize` call that removed `cid:` src attributes before substitution has been moved to after the attachment loop, where it now runs exactly once.
 - Binary attachment base64 encoding now uses chunked `String.fromCharCode` instead of a `reduce` accumulator, eliminating O(n²) string copying for large attachments.
 - Pre-compute `formattedDate` from `EmailMeta.date` once at load time via `applyFormattedDate` rather than calling `new Date().toLocaleString()` on every template render. Formatted dates are not persisted to IndexedDB, avoiding locale-staleness across sessions.
+- `EmailItem`: `headers` computed no longer mutates the shared Pinia store array in place; replaced `localeCompare` with a direct ASCII comparison for header key sorting.
 
 ## [0.3.0] - 2026-06-01
 
