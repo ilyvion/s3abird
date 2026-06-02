@@ -22,6 +22,7 @@ const mockEmail = {
 const mockMeta: EmailMeta = {
     key: 'test-key',
     subject: 'Test Subject',
+    formattedDate: '',
     textPreview: 'Hello',
 }
 
@@ -110,7 +111,7 @@ describe('cache', () => {
         })
 
         it('stores multiple entries and returns them all', async () => {
-            const meta2: EmailMeta = { key: 'key2', textPreview: 'World' }
+            const meta2: EmailMeta = { key: 'key2', textPreview: 'World', formattedDate: '' }
             await setEmailMeta('key1', mockMeta)
             await setEmailMeta('key2', meta2)
             const metas = await getAllEmailMetas()

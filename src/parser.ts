@@ -16,6 +16,7 @@ export type EmailMeta = {
     to?: Address[]
     subject?: string
     date?: string
+    formattedDate?: string
     textPreview: string
 }
 
@@ -28,6 +29,10 @@ export function extractMeta(email: ParsedEmail): EmailMeta {
         date: email.date,
         textPreview: (email.text ?? '').slice(0, TEXT_PREVIEW_LENGTH),
     }
+}
+
+export function applyFormattedDate(meta: EmailMeta): EmailMeta {
+    return { ...meta, formattedDate: meta.date ? new Date(meta.date).toLocaleString() : '' }
 }
 
 export default async function (email: RawEmail, emailKey: string): Promise<ParsedEmail> {

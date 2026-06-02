@@ -4,7 +4,7 @@ import { useEmailStore } from './email'
 import type { EmailMeta } from '../parser'
 
 function makeMeta(key: string, overrides: Partial<EmailMeta> = {}): EmailMeta {
-    return { key, textPreview: '', ...overrides }
+    return { key, textPreview: '', formattedDate: '', ...overrides }
 }
 
 describe('email store', () => {

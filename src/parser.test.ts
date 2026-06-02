@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest'
-import parse from './parser'
+import parse, { extractMeta, applyFormattedDate } from './parser'
 
 const RAW_EMAIL_WITH_ANGLE_BRACKET_ADDRESS = `From: sender@example.com
 To: recipient@example.com
@@ -101,5 +101,34 @@ iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAA
             const result = await parse(RAW_EMAIL_WITH_ANGLE_BRACKET_ADDRESS, 'test-key')
             expect(result.textAsHtml).toContain('&lt;user@example.com&gt;')
         })
+    })
+})
+
+describe('applyFormattedDate', () => {
+    it('sets formattedDate to toLocaleString() of email.date when present', async () => {
+        const raw = `From: sender@example.com
+To: recipient@example.com
+Subject: Test
+Date: Mon, 01 Jan 2024 12:00:00 +0000
+Content-Type: text/plain
+
+Hello
+`
+        const parsed = await parse(raw, 'test-key')
+        const meta = applyFormattedDate(extractMeta(parsed))
+        expect(meta.formattedDate).toBe(new Date(parsed.date!).toLocaleString())
+    })
+
+    it('sets formattedDate to empty string when date is absent', async () => {
+        const raw = `From: sender@example.com
+To: recipient@example.com
+Subject: No date
+Content-Type: text/plain
+
+Hello
+`
+        const parsed = await parse(raw, 'test-key')
+        const meta = applyFormattedDate(extractMeta(parsed))
+        expect(meta.formattedDate).toBe('')
     })
 })

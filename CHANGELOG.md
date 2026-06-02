@@ -13,18 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Email list now stores only lightweight metadata (sender, subject, date, text
-  preview) in memory; full email bodies live exclusively in IndexedDB and are
-  loaded on demand when opening an email
-- S3 fetches are now concurrency-limited to 10 simultaneous requests instead of
-  firing all at once with `Promise.all`
-- Cached metadata is loaded from IndexedDB immediately on startup so the list
-  renders without waiting for any S3 request; uncached emails stream in as each
-  batch completes
-- `Label.f` now accepts a narrow `FilterableEmail` type instead of the full
-  postal-mime `Email`
-- `clearEmailCache` and `evictStaleEntries` now atomically clean both the
-  `emails` and `email-meta` IndexedDB stores
+- Email list now stores only lightweight metadata (sender, subject, date, text preview) in memory; full email bodies live exclusively in IndexedDB and are loaded on demand when opening an email
+- S3 fetches are now concurrency-limited to 10 simultaneous requests instead of firing all at once with `Promise.all`
+- Cached metadata is loaded from IndexedDB immediately on startup so the list renders without waiting for any S3 request; uncached emails stream in as each batch completes
+- `Label.f` now accepts a narrow `FilterableEmail` type instead of the full postal-mime `Email`
+- `clearEmailCache` and `evictStaleEntries` now atomically clean both the `emails` and `email-meta` IndexedDB stores
 
 ### Fixed
 
@@ -36,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plain-text emails with angle-bracket sequences (e.g. `<user@example.com>`) no longer get silently stripped; `DOMPurify.sanitize` is now only applied to HTML content.
 - Inline images (CID attachments) are no longer silently stripped; the early `DOMPurify.sanitize` call that removed `cid:` src attributes before substitution has been moved to after the attachment loop, where it now runs exactly once.
 - Binary attachment base64 encoding now uses chunked `String.fromCharCode` instead of a `reduce` accumulator, eliminating O(n²) string copying for large attachments.
+- Pre-compute `formattedDate` from `EmailMeta.date` once at load time via `applyFormattedDate` rather than calling `new Date().toLocaleString()` on every template render. Formatted dates are not persisted to IndexedDB, avoiding locale-staleness across sessions.
 
 ## [0.3.0] - 2026-06-01
 

@@ -86,7 +86,7 @@
                         >
                     </td>
                     <td class="block text-xs text-nowrap md:table-cell md:text-right">
-                        {{ meta.date ? new Date(meta.date).toLocaleString() : '' }}
+                        {{ meta.formattedDate }}
                     </td>
                 </tr>
             </tbody>
@@ -113,7 +113,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { S3Client, ListObjectsV2Command, GetObjectCommand, type _Object } from '@aws-sdk/client-s3'
-import parser, { extractMeta, type EmailMeta } from './parser.js'
+import parser, { extractMeta, applyFormattedDate, type EmailMeta } from './parser.js'
 import Filters from './FilterList.vue'
 import EmailAddress from './EmailAddress.vue'
 import { validateEffectiveConfig, makeCacheKey, type EffectiveBucketConfig } from './config.js'
@@ -214,15 +214,14 @@ async function loadFromBucket(bucketConfig: EffectiveBucketConfig): Promise<void
     // Load all cached metadata into the store immediately so the list renders without waiting
     const cachedMetas = await getAllEmailMetas()
     const cachedMetaKeys = new Set(cachedMetas.map((m) => m.key))
-    emailStore.setEmailMetas(cachedMetas)
+    emailStore.setEmailMetas(cachedMetas.map(applyFormattedDate))
 
     // Fetch uncached emails in concurrency-limited batches; add each to the store as it arrives
     const uncached = s3Index.filter(({ cacheKey }) => !cachedMetaKeys.has(cacheKey))
     const tasks = uncached.map(({ s3Key, cacheKey }) => async () => {
         const cached = await getCachedEmail(cacheKey)
         if (cached) {
-            const meta = extractMeta(cached)
-            emailStore.addEmailMeta(meta)
+            emailStore.addEmailMeta(applyFormattedDate(extractMeta(cached)))
             return
         }
 
@@ -233,7 +232,7 @@ async function loadFromBucket(bucketConfig: EffectiveBucketConfig): Promise<void
         const meta = extractMeta(parsed)
         await setCachedEmail(cacheKey, parsed)
         await setEmailMeta(cacheKey, meta)
-        emailStore.addEmailMeta(meta)
+        emailStore.addEmailMeta(applyFormattedDate(meta))
     })
 
     await fetchInBatches(tasks, CONCURRENCY_LIMIT)
