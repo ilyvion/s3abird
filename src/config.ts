@@ -146,6 +146,11 @@ export function validateEffectiveConfig(
 
 export function makeCacheKey(config: EffectiveBucketConfig, s3Key: string): string {
     const bytes = new TextEncoder().encode(`${config.aws_region}|${config.bucket}|${s3Key}`)
+    // This is fine because the maximum length of bytes is 4,181 bytes:
+    // * Max S3 key: 1,024 UTF-8 bytes. Even the most Unicode-dense path (all 4-byte codepoints)
+    //   gives ~4,096 encoded bytes. Add region (~20 bytes) and bucket (~63 bytes) and you're at
+    //   ~4,181 bytes absolute maximum.
+    // * V8's argument count limit is 65,536.
     return btoa(String.fromCharCode(...bytes))
 }
 
