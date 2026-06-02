@@ -66,7 +66,17 @@ export default async function (email: RawEmail, emailKey: string): Promise<Parse
     return extended
 }
 
-function attachmentToBase64(att: Attachment): string {
+export function isInlineAttachment(attachment: Attachment, html?: string): boolean {
+    if (!attachment.contentId) return false
+    // disposition:'inline' is the reliable signal after the parser has already
+    // replaced cid: references with data URIs in the HTML
+    if (attachment.disposition === 'inline') return true
+    if (!html) return false
+    const cid = attachment.contentId.replace(/^<|>$/g, '')
+    return html.includes(`cid:${cid}`)
+}
+
+export function attachmentToBase64(att: Attachment): string {
     if (att.encoding === 'base64') {
         // Already base64 encoded
         if (typeof att.content !== 'string') {

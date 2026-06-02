@@ -33,6 +33,25 @@
             <div class="prose mx-auto" v-html="email.html || email.textAsHtml" />
             <!-- eslint-enable vue/no-v-html -->
         </div>
+        <div v-if="downloadableAttachments.length > 0" class="mt-4">
+            <h3 class="mb-2 font-semibold">Attachments</h3>
+            <ul class="space-y-1">
+                <li
+                    v-for="(att, index) in downloadableAttachments"
+                    :key="index"
+                    class="flex items-center gap-2"
+                >
+                    <span>{{ att.filename || `attachment-${index + 1}` }}</span>
+                    <span class="badge badge-sm">{{ att.mimeType }}</span>
+                    <button
+                        class="btn btn-ghost btn-sm"
+                        @click="downloadAttachment(att, index + 1)"
+                    >
+                        Download
+                    </button>
+                </li>
+            </ul>
+        </div>
     </div>
     <div v-else-if="error" class="alert alert-error text-error-content font-semibold">
         Error: {{ error }}
@@ -42,7 +61,8 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted } from 'vue'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
-import parser, { type ParsedEmail } from './parser.js'
+import { type Attachment } from 'postal-mime'
+import parser, { type ParsedEmail, attachmentToBase64, isInlineAttachment } from './parser.js'
 import EmailAddress from './EmailAddress.vue'
 import { validateEffectiveConfig, decodeCacheKey } from './config.js'
 import { getCachedEmail, setCachedEmail } from './cache.js'
@@ -63,6 +83,25 @@ const headers = computed(() =>
         .slice()
         .sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
 )
+
+const downloadableAttachments = computed(() => {
+    if (!email.value) return []
+    return email.value.attachments.filter((att) => !isInlineAttachment(att, email.value?.html))
+})
+
+function downloadAttachment(att: Attachment, n: number): void {
+    const base64 = attachmentToBase64(att)
+    const byteString = atob(base64)
+    const bytes = new Uint8Array(byteString.length)
+    for (let i = 0; i < byteString.length; i++) bytes[i] = byteString.charCodeAt(i)
+    const blob = new Blob([bytes], { type: att.mimeType })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = att.filename || `attachment-${n}`
+    a.click()
+    URL.revokeObjectURL(url)
+}
 
 onMounted(async () => {
     if (configStore.allBuckets.length === 0) {

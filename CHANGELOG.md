@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - IndexedDB email cache now evicts entries older than 14 days; stale entries are removed on each inbox load and lazily on individual reads.
+- Attachments section in the email detail view listing non-inline attachments (filename, MIME type, download button); inline detection uses `Content-Disposition: inline` and `cid:` HTML presence.
 
 ### Changed
 

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest'
-import parse, { extractMeta, applyFormattedDate } from './parser'
+import parse, { extractMeta, applyFormattedDate, isInlineAttachment } from './parser'
 
 const RAW_EMAIL_WITH_ANGLE_BRACKET_ADDRESS = `From: sender@example.com
 To: recipient@example.com
@@ -101,6 +101,58 @@ iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAA
             const result = await parse(RAW_EMAIL_WITH_ANGLE_BRACKET_ADDRESS, 'test-key')
             expect(result.textAsHtml).toContain('&lt;user@example.com&gt;')
         })
+    })
+})
+
+describe('isInlineAttachment', () => {
+    const att = (extra: object = {}) =>
+        ({
+            content: '',
+            mimeType: 'image/png',
+            filename: null,
+            disposition: 'attachment',
+            ...extra,
+        }) as unknown as Parameters<typeof isInlineAttachment>[0]
+
+    it('returns false when attachment has no contentId', () => {
+        expect(isInlineAttachment(att(), '<img src="cid:foo">')).toBe(false)
+    })
+
+    it('returns false when html is undefined', () => {
+        expect(isInlineAttachment(att({ contentId: '<foo@x>' }), undefined)).toBe(false)
+    })
+
+    it('returns false when contentId is not referenced in html', () => {
+        expect(isInlineAttachment(att({ contentId: '<foo@x>' }), '<img src="cid:bar@x">')).toBe(
+            false
+        )
+    })
+
+    it('returns true when contentId (without angle brackets) appears as cid: in html', () => {
+        expect(isInlineAttachment(att({ contentId: '<foo@x>' }), '<img src="cid:foo@x">')).toBe(
+            true
+        )
+    })
+
+    it('returns true when contentId has no angle brackets and matches cid: reference', () => {
+        expect(isInlineAttachment(att({ contentId: 'foo@x' }), '<img src="cid:foo@x">')).toBe(true)
+    })
+
+    it('returns true when disposition is inline even if cid: has been replaced in HTML', () => {
+        // The parser replaces cid: with data URIs before EmailItem sees the HTML,
+        // so we rely on disposition:'inline' as the signal
+        expect(
+            isInlineAttachment(
+                att({ contentId: '<foo@x>', disposition: 'inline' }),
+                '<img src="data:image/png;base64,abc123">'
+            )
+        ).toBe(true)
+    })
+
+    it('returns false when disposition is attachment even if contentId is set', () => {
+        expect(
+            isInlineAttachment(att({ contentId: '<foo@x>', disposition: 'attachment' }), undefined)
+        ).toBe(false)
     })
 })
 
