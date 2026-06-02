@@ -117,7 +117,7 @@ import parser, { type ParsedEmail } from './parser.js'
 import Filters from './FilterList.vue'
 import EmailAddress from './EmailAddress.vue'
 import { validateEffectiveConfig, makeCacheKey, type EffectiveBucketConfig } from './config.js'
-import { getCachedEmail, setCachedEmail } from './cache.js'
+import { getCachedEmail, setCachedEmail, evictStaleEntries } from './cache.js'
 import { useEmailStore } from './stores/email.js'
 import { useConfigStore } from './stores/config.js'
 import { filterAndSortByDate, getPage, totalPages, PAGE_SIZE } from './s3Utils.js'
@@ -182,6 +182,7 @@ async function loadFromBucket(bucketConfig: EffectiveBucketConfig): Promise<Pars
         },
     })
 
+    await evictStaleEntries()
     const sorted = filterAndSortByDate(await listAllObjects(s3, bucket, prefix))
 
     return Promise.all(

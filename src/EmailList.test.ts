@@ -11,6 +11,7 @@ vi.mock('vue-router', () => ({
 vi.mock('./cache.js', () => ({
     getCachedEmail: vi.fn().mockResolvedValue(null),
     setCachedEmail: vi.fn().mockResolvedValue(undefined),
+    evictStaleEntries: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('@aws-sdk/client-s3', () => ({

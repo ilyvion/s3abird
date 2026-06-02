@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- IndexedDB email cache now evicts entries older than 14 days; stale entries are removed on each inbox load and lazily on individual reads.
+
 ### Fixed
 
 - Subject label filter no longer incorrectly matches emails that have no subject line.
