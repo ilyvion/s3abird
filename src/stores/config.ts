@@ -21,10 +21,10 @@ export const useConfigStore = defineStore('config', {
             if (!state.config) return []
             return flattenBuckets(state.config)
         },
-        activeBucket(state): EffectiveBucketConfig | null {
-            const buckets = state.config ? flattenBuckets(state.config) : []
+        activeBucket(): EffectiveBucketConfig | null {
+            const buckets = this.allBuckets
             if (buckets.length === 0) return null
-            const idx = Math.min(state.activeBucketIndex, buckets.length - 1)
+            const idx = Math.min(this.activeBucketIndex, buckets.length - 1)
             return buckets[idx] ?? null
         },
     },
