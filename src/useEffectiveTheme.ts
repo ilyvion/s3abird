@@ -3,6 +3,7 @@ import { useThemeStore, type Theme, type ThemeName } from './stores/theme'
 
 const systemPrefersDark = ref(false)
 let isInitialized = false
+let cleanup: (() => void) | null = null
 
 const effectiveTheme = computed<Exclude<Theme, 'system'>>(() => {
     const theme = useThemeStore().theme
@@ -26,8 +27,11 @@ function setupSystemThemeListener() {
     update()
     media.addEventListener('change', update)
 
-    // ❌ DON'T do this — it ties cleanup to just one component
-    // onBeforeUnmount(() => media.removeEventListener('change', update))
+    cleanup = () => {
+        media.removeEventListener('change', update)
+        isInitialized = false
+        cleanup = null
+    }
 }
 
 export function useEffectiveTheme() {
@@ -37,6 +41,7 @@ export function useEffectiveTheme() {
         systemPrefersDark,
         effectiveTheme,
         effectiveThemeName,
+        dispose: () => cleanup?.(),
         applyThemeToDocument: () => {
             watch(
                 effectiveThemeName,

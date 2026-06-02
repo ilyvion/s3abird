@@ -32,14 +32,16 @@
     </div>
 </template>
 <script lang="ts" setup>
+import { onBeforeUnmount } from 'vue'
 import Settings from './AwsSettings.vue'
 import BucketSelector from './BucketSelector.vue'
 import Navbar from './MainNavbar.vue'
 import Footer from './MainFooter.vue'
 import { useEffectiveTheme } from './useEffectiveTheme'
 
-const { applyThemeToDocument } = useEffectiveTheme()
+const { applyThemeToDocument, dispose } = useEffectiveTheme()
 applyThemeToDocument()
+onBeforeUnmount(dispose)
 </script>
 <style scoped lang="css">
 .container:has(.animate__fadeInLeft, .animate__fadeOutRight) {

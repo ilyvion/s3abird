@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pre-compute `formattedDate` from `EmailMeta.date` once at load time via `applyFormattedDate` rather than calling `new Date().toLocaleString()` on every template render. Formatted dates are not persisted to IndexedDB, avoiding locale-staleness across sessions.
 - `EmailItem`: `headers` computed no longer mutates the shared Pinia store array in place; replaced `localeCompare` with a direct ASCII comparison for header key sorting.
 - `activeBucket` getter now reuses the cached `allBuckets` getter result instead of calling `flattenBuckets` a second time on every reactive evaluation.
+- fix(useEffectiveTheme): expose dispose() to remove MediaQueryList listener on unmount
 
 ## [0.3.0] - 2026-06-01
 
