@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Corrupted `localStorage` data no longer crashes the app on startup; invalid JSON is treated as absent config
 - Inbox now shows an error message when bucket configuration fails validation, instead of silently showing an empty list
 - Plain-text emails with angle-bracket sequences (e.g. `<user@example.com>`) no longer get silently stripped; `DOMPurify.sanitize` is now only applied to HTML content.
+- Inline images (CID attachments) are no longer silently stripped; the early `DOMPurify.sanitize` call that removed `cid:` src attributes before substitution has been moved to after the attachment loop, where it now runs exactly once.
 
 ## [0.3.0] - 2026-06-01
 

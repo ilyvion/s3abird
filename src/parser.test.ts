@@ -37,6 +37,38 @@ Content-Type: text/html
         })
     })
 
+    describe('inline attachments', () => {
+        const RAW_EMAIL_WITH_INLINE_IMAGE = `MIME-Version: 1.0
+From: sender@example.com
+To: recipient@example.com
+Subject: Inline image test
+Content-Type: multipart/related; boundary="==sep=="
+
+--==sep==
+Content-Type: text/html; charset=utf-8
+
+<p>Image: <img src="cid:img001@test.example"><script>xss</script></p>
+--==sep==
+Content-Type: image/png
+Content-ID: <img001@test.example>
+Content-Transfer-Encoding: base64
+
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==
+--==sep==--
+`
+
+        it('replaces cid: references with data URIs', async () => {
+            const result = await parse(RAW_EMAIL_WITH_INLINE_IMAGE, 'test-key')
+            expect(result.html).not.toContain('cid:img001@test.example')
+            expect(result.html).toContain('data:image/png;base64,')
+        })
+
+        it('sanitizes HTML after cid: substitution', async () => {
+            const result = await parse(RAW_EMAIL_WITH_INLINE_IMAGE, 'test-key')
+            expect(result.html).not.toContain('<script>')
+        })
+    })
+
     describe('textAsHtml', () => {
         it('escapes angle brackets in plain text when converting to HTML', async () => {
             const result = await parse(RAW_EMAIL_WITH_ANGLE_BRACKET_ADDRESS, 'test-key')

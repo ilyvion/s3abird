@@ -32,9 +32,6 @@ export function extractMeta(email: ParsedEmail): EmailMeta {
 
 export default async function (email: RawEmail, emailKey: string): Promise<ParsedEmail> {
     const parsed = await PostalMime.parse(email)
-    if (parsed.html) {
-        parsed.html = DOMPurify.sanitize(parsed.html)
-    }
     if (parsed.headers) {
         for (const header of parsed.headers) {
             header.key = DOMPurify.sanitize(header.key)
@@ -56,8 +53,9 @@ export default async function (email: RawEmail, emailKey: string): Promise<Parse
             const dataUri = `data:${attachment.mimeType};base64,${base64}`
             const cidRegex = new RegExp(`cid:${cid.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g')
 
-            extended.html = DOMPurify.sanitize(extended.html.replace(cidRegex, dataUri))
+            extended.html = extended.html.replace(cidRegex, dataUri)
         }
+        extended.html = DOMPurify.sanitize(extended.html)
     }
 
     return extended
