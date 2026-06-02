@@ -1,5 +1,6 @@
 import { openDB } from 'idb'
 import type { ParsedEmail } from './parser'
+import type { EmailMeta } from './parser'
 
 const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000
 
@@ -8,7 +9,7 @@ interface CacheEntry {
     cachedAt: number
 }
 
-const dbPromise = openDB('email-cache', 2, {
+const dbPromise = openDB('email-cache', 3, {
     upgrade(db, oldVersion) {
         if (oldVersion < 2) {
             // Entries from v1 have no timestamp; drop and recreate the store.
@@ -16,6 +17,9 @@ const dbPromise = openDB('email-cache', 2, {
                 db.deleteObjectStore('emails')
             }
             db.createObjectStore('emails')
+        }
+        if (oldVersion < 3) {
+            db.createObjectStore('email-meta')
         }
     },
 })
@@ -37,15 +41,26 @@ export async function setCachedEmail(key: string, value: ParsedEmail) {
     return db.put('emails', entry, key)
 }
 
+export async function setEmailMeta(key: string, value: EmailMeta): Promise<void> {
+    const db = await dbPromise
+    await db.put('email-meta', value, key)
+}
+
+export async function getAllEmailMetas(): Promise<EmailMeta[]> {
+    const db = await dbPromise
+    return db.getAll('email-meta')
+}
+
 export async function evictStaleEntries() {
     const db = await dbPromise
     const cutoff = Date.now() - FOURTEEN_DAYS_MS
-    const tx = db.transaction('emails', 'readwrite')
-    let cursor = await tx.store.openCursor()
+    const tx = db.transaction(['emails', 'email-meta'], 'readwrite')
+    let cursor = await tx.objectStore('emails').openCursor()
     while (cursor) {
         const entry = cursor.value as CacheEntry
         if (entry.cachedAt < cutoff) {
             await cursor.delete()
+            await tx.objectStore('email-meta').delete(cursor.key)
         }
         cursor = await cursor.continue()
     }
@@ -54,5 +69,8 @@ export async function evictStaleEntries() {
 
 export async function clearEmailCache() {
     const db = await dbPromise
-    await db.clear('emails')
+    const tx = db.transaction(['emails', 'email-meta'], 'readwrite')
+    await tx.objectStore('emails').clear()
+    await tx.objectStore('email-meta').clear()
+    await tx.done
 }

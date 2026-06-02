@@ -32,7 +32,7 @@
         <div v-if="error" class="alert alert-error text-error-content font-semibold">
             Error: {{ error }}
         </div>
-        <table v-if="!(pagedEmails?.length > 0) && loading" class="table-hover table">
+        <table v-if="!(pagedMeta?.length > 0) && loading" class="table-hover table">
             <tbody>
                 <tr v-for="index in 10" :key="index">
                     <td class="truncate" style="max-width: 300px">
@@ -50,10 +50,10 @@
                 </tr>
             </tbody>
         </table>
-        <h3 v-if="!loading && pagedEmails && pagedEmails.length == 0" class="text-neutral-500">
+        <h3 v-if="!loading && pagedMeta && pagedMeta.length == 0" class="text-neutral-500">
             There's nothing in here
         </h3>
-        <table v-if="pagedEmails && pagedEmails.length > 0" class="block md:table">
+        <table v-if="pagedMeta && pagedMeta.length > 0" class="block md:table">
             <thead class="hidden md:table-header-group">
                 <tr>
                     <th>From</th>
@@ -63,30 +63,30 @@
             </thead>
             <tbody class="block md:table-row-group">
                 <tr
-                    v-for="email in pagedEmails"
-                    :key="email.key"
+                    v-for="meta in pagedMeta"
+                    :key="meta.key"
                     class="hover:bg-base-300 max-md:border-b-base-content/5 block cursor-pointer max-md:border-b max-md:py-2 max-md:shadow-sm max-md:last:border-b-0 md:table-row"
-                    @click="openEmail(email)"
+                    @click="openEmail(meta)"
                 >
                     <td
                         class="block truncate max-md:font-semibold md:table-cell"
                         style="max-width: 300px"
                     >
-                        <EmailAddress :address="email.from" />
+                        <EmailAddress :address="meta.from" />
                     </td>
                     <td
                         class="block truncate max-md:text-xs md:table-cell md:w-full md:max-w-[1px] md:min-w-[300px]"
                     >
                         <span class="max-md:font-semibold">{{
-                            email.subject || '(no subject)'
+                            meta.subject || '(no subject)'
                         }}</span
                         ><span class="text-neutral-400"
                             ><span class="max-md:hidden">&nbsp;-&nbsp;</span
-                            ><br class="md:hidden" />{{ email.text }}</span
+                            ><br class="md:hidden" />{{ meta.textPreview }}</span
                         >
                     </td>
                     <td class="block text-xs text-nowrap md:table-cell md:text-right">
-                        {{ email.date ? new Date(email.date).toLocaleString() : '' }}
+                        {{ meta.date ? new Date(meta.date).toLocaleString() : '' }}
                     </td>
                 </tr>
             </tbody>
@@ -113,14 +113,22 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { S3Client, ListObjectsV2Command, GetObjectCommand, type _Object } from '@aws-sdk/client-s3'
-import parser, { type ParsedEmail } from './parser.js'
+import parser, { extractMeta, type EmailMeta } from './parser.js'
 import Filters from './FilterList.vue'
 import EmailAddress from './EmailAddress.vue'
 import { validateEffectiveConfig, makeCacheKey, type EffectiveBucketConfig } from './config.js'
-import { getCachedEmail, setCachedEmail, evictStaleEntries } from './cache.js'
+import {
+    getCachedEmail,
+    setCachedEmail,
+    setEmailMeta,
+    getAllEmailMetas,
+    evictStaleEntries,
+} from './cache.js'
 import { useEmailStore } from './stores/email.js'
 import { useConfigStore } from './stores/config.js'
 import { filterAndSortByDate, getPage, totalPages, PAGE_SIZE } from './s3Utils.js'
+
+const CONCURRENCY_LIMIT = 10
 
 const emailStore = useEmailStore()
 const configStore = useConfigStore()
@@ -131,16 +139,21 @@ const error = ref<string | null>(null)
 const loading = ref(false)
 const currentPage = ref(1)
 
-const filteredEmails = computed<ParsedEmail[]>(() => emailStore.filteredEmails)
-const numPages = computed(() => totalPages(filteredEmails.value.length, PAGE_SIZE))
-const pagedEmails = computed(() => getPage(filteredEmails.value, currentPage.value, PAGE_SIZE))
+const filteredIndex = computed(() => emailStore.filteredIndex)
+const numPages = computed(() => totalPages(filteredIndex.value.length, PAGE_SIZE))
+const pagedMeta = computed<EmailMeta[]>(() => {
+    const page = getPage(filteredIndex.value, currentPage.value, PAGE_SIZE)
+    return page
+        .map(({ cacheKey }) => emailStore.emailMeta.get(cacheKey))
+        .filter((m): m is EmailMeta => m !== undefined)
+})
 
-watch(filteredEmails, () => {
+watch(filteredIndex, () => {
     currentPage.value = 1
 })
 
-function openEmail(email: ParsedEmail) {
-    router.push({ path: `/inbox/${email.key}` })
+function openEmail(meta: EmailMeta) {
+    router.push({ path: `/inbox/${meta.key}` })
 }
 
 async function listAllObjects(
@@ -166,7 +179,15 @@ async function listAllObjects(
     return objects
 }
 
-async function loadFromBucket(bucketConfig: EffectiveBucketConfig): Promise<ParsedEmail[]> {
+async function fetchInBatches<T>(tasks: (() => Promise<T>)[], limit: number): Promise<T[]> {
+    const results: T[] = []
+    for (let i = 0; i < tasks.length; i += limit) {
+        results.push(...(await Promise.all(tasks.slice(i, i + limit).map((t) => t()))))
+    }
+    return results
+}
+
+async function loadFromBucket(bucketConfig: EffectiveBucketConfig): Promise<void> {
     const errRef = ref<string | null>(null)
     const result = validateEffectiveConfig(bucketConfig, errRef)
     if (!result.result) throw new Error(errRef.value ?? 'Invalid bucket configuration')
@@ -185,22 +206,37 @@ async function loadFromBucket(bucketConfig: EffectiveBucketConfig): Promise<Pars
     await evictStaleEntries()
     const sorted = filterAndSortByDate(await listAllObjects(s3, bucket, prefix))
 
-    return Promise.all(
-        sorted.map(async (item) => {
-            if (!item.Key) throw new Error('Missing key')
+    const s3Index = sorted
+        .filter((item) => !!item.Key)
+        .map((item) => ({ s3Key: item.Key!, cacheKey: makeCacheKey(bucketConfig, item.Key!) }))
+    emailStore.setS3Index(s3Index)
 
-            const cacheKey = makeCacheKey(bucketConfig, item.Key)
-            const cached = await getCachedEmail(cacheKey)
-            if (cached) return cached
+    // Load all cached metadata into the store immediately so the list renders without waiting
+    const cachedMetas = await getAllEmailMetas()
+    const cachedMetaKeys = new Set(cachedMetas.map((m) => m.key))
+    emailStore.setEmailMetas(cachedMetas)
 
-            const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: item.Key }))
-            const body: ReadableStream | undefined = res.Body?.transformToWebStream()
-            if (!body) throw new Error('No body in response')
-            const parsed = await parser(body, cacheKey)
-            await setCachedEmail(cacheKey, parsed)
-            return parsed
-        })
-    )
+    // Fetch uncached emails in concurrency-limited batches; add each to the store as it arrives
+    const uncached = s3Index.filter(({ cacheKey }) => !cachedMetaKeys.has(cacheKey))
+    const tasks = uncached.map(({ s3Key, cacheKey }) => async () => {
+        const cached = await getCachedEmail(cacheKey)
+        if (cached) {
+            const meta = extractMeta(cached)
+            emailStore.addEmailMeta(meta)
+            return
+        }
+
+        const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: s3Key }))
+        const body: ReadableStream | undefined = res.Body?.transformToWebStream()
+        if (!body) throw new Error(`No body in response for ${s3Key}`)
+        const parsed = await parser(body, cacheKey)
+        const meta = extractMeta(parsed)
+        await setCachedEmail(cacheKey, parsed)
+        await setEmailMeta(cacheKey, meta)
+        emailStore.addEmailMeta(meta)
+    })
+
+    await fetchInBatches(tasks, CONCURRENCY_LIMIT)
 }
 
 async function loadEmails(force = false) {
@@ -210,13 +246,13 @@ async function loadEmails(force = false) {
         return
     }
 
-    if (!force && emailStore.emails.size > 0) return
+    if (!force && emailStore.s3Index.length > 0) return
 
     error.value = null
     loading.value = true
 
     try {
-        emailStore.updateEmails(await loadFromBucket(activeBucket))
+        await loadFromBucket(activeBucket)
     } catch (e: unknown) {
         error.value = e instanceof Error ? e.message : 'Unknown error while loading emails'
     } finally {

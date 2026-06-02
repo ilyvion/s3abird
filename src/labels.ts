@@ -1,16 +1,19 @@
 import type { Address, Email } from 'postal-mime'
 
+export type FilterableEmail = Pick<Email, 'from' | 'to' | 'subject'>
+
 export type Label = {
     type: 'to' | 'from' | 'subject'
     value: string
-    f: (e: Email) => boolean
+    f: (e: FilterableEmail) => boolean
 }
 
 const To = (addr: string): Label => {
     return {
         type: 'to',
         value: addr,
-        f: (e: Email) => e.to?.find((address) => address_contains(address, addr)) !== undefined,
+        f: (e: FilterableEmail) =>
+            e.to?.find((address) => address_contains(address, addr)) !== undefined,
     }
 }
 
@@ -18,7 +21,7 @@ const From = (addr: string): Label => {
     return {
         type: 'from',
         value: addr,
-        f: (e: Email) => e.from !== undefined && address_contains(e.from, addr),
+        f: (e: FilterableEmail) => e.from !== undefined && address_contains(e.from, addr),
     }
 }
 
@@ -26,7 +29,7 @@ const Subject = (text: string): Label => {
     return {
         type: 'subject',
         value: text,
-        f: (e: Email) => (e.subject?.indexOf(text) ?? -1) !== -1,
+        f: (e: FilterableEmail) => (e.subject?.indexOf(text) ?? -1) !== -1,
     }
 }
 

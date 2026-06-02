@@ -11,6 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - IndexedDB email cache now evicts entries older than 14 days; stale entries are removed on each inbox load and lazily on individual reads.
 
+### Changed
+
+- Email list now stores only lightweight metadata (sender, subject, date, text
+  preview) in memory; full email bodies live exclusively in IndexedDB and are
+  loaded on demand when opening an email
+- S3 fetches are now concurrency-limited to 10 simultaneous requests instead of
+  firing all at once with `Promise.all`
+- Cached metadata is loaded from IndexedDB immediately on startup so the list
+  renders without waiting for any S3 request; uncached emails stream in as each
+  batch completes
+- `Label.f` now accepts a narrow `FilterableEmail` type instead of the full
+  postal-mime `Email`
+- `clearEmailCache` and `evictStaleEntries` now atomically clean both the
+  `emails` and `email-meta` IndexedDB stores
+
 ### Fixed
 
 - Subject label filter no longer incorrectly matches emails that have no subject line.

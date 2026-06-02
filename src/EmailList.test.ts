@@ -11,6 +11,8 @@ vi.mock('vue-router', () => ({
 vi.mock('./cache.js', () => ({
     getCachedEmail: vi.fn().mockResolvedValue(null),
     setCachedEmail: vi.fn().mockResolvedValue(undefined),
+    setEmailMeta: vi.fn().mockResolvedValue(undefined),
+    getAllEmailMetas: vi.fn().mockResolvedValue([]),
     evictStaleEntries: vi.fn().mockResolvedValue(undefined),
 }))
 

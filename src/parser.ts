@@ -1,11 +1,33 @@
 import createDOMPurify from 'dompurify'
-import PostalMime, { type Attachment, type Email, type RawEmail } from 'postal-mime'
+import PostalMime, { type Address, type Attachment, type Email, type RawEmail } from 'postal-mime'
 
 const DOMPurify = createDOMPurify(window)
 
 export type ParsedEmail = Email & {
     textAsHtml: string
     key: string
+}
+
+const TEXT_PREVIEW_LENGTH = 200
+
+export type EmailMeta = {
+    key: string
+    from?: Address
+    to?: Address[]
+    subject?: string
+    date?: string
+    textPreview: string
+}
+
+export function extractMeta(email: ParsedEmail): EmailMeta {
+    return {
+        key: email.key,
+        from: email.from,
+        to: email.to,
+        subject: email.subject,
+        date: email.date,
+        textPreview: (email.text ?? '').slice(0, TEXT_PREVIEW_LENGTH),
+    }
 }
 
 export default async function (email: RawEmail, emailKey: string): Promise<ParsedEmail> {

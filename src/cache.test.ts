@@ -1,8 +1,15 @@
 // @vitest-environment node
 import 'fake-indexeddb/auto'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { getCachedEmail, setCachedEmail, clearEmailCache, evictStaleEntries } from './cache'
-import type { ParsedEmail } from './parser'
+import {
+    getCachedEmail,
+    setCachedEmail,
+    setEmailMeta,
+    getAllEmailMetas,
+    clearEmailCache,
+    evictStaleEntries,
+} from './cache'
+import type { ParsedEmail, EmailMeta } from './parser'
 
 const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000
 
@@ -11,6 +18,12 @@ const mockEmail = {
     textAsHtml: '<p>Hello</p>',
     subject: 'Test Subject',
 } as unknown as ParsedEmail
+
+const mockMeta: EmailMeta = {
+    key: 'test-key',
+    subject: 'Test Subject',
+    textPreview: 'Hello',
+}
 
 describe('cache', () => {
     beforeEach(async () => {
@@ -75,20 +88,59 @@ describe('cache', () => {
         })
     })
 
+    describe('setEmailMeta / getAllEmailMetas', () => {
+        it('returns an empty array when no metadata is stored', async () => {
+            expect(await getAllEmailMetas()).toEqual([])
+        })
+
+        it('stores metadata that is subsequently retrievable via getAllEmailMetas', async () => {
+            await setEmailMeta('key1', mockMeta)
+            const metas = await getAllEmailMetas()
+            expect(metas).toHaveLength(1)
+            expect(metas[0]).toEqual(mockMeta)
+        })
+
+        it('overwrites an existing metadata entry', async () => {
+            const updated: EmailMeta = { ...mockMeta, subject: 'Updated' }
+            await setEmailMeta('key1', mockMeta)
+            await setEmailMeta('key1', updated)
+            const metas = await getAllEmailMetas()
+            expect(metas).toHaveLength(1)
+            expect(metas[0].subject).toBe('Updated')
+        })
+
+        it('stores multiple entries and returns them all', async () => {
+            const meta2: EmailMeta = { key: 'key2', textPreview: 'World' }
+            await setEmailMeta('key1', mockMeta)
+            await setEmailMeta('key2', meta2)
+            const metas = await getAllEmailMetas()
+            expect(metas).toHaveLength(2)
+        })
+    })
+
     describe('evictStaleEntries', () => {
-        it('removes entries older than 14 days', async () => {
+        it('removes entries older than 14 days from both stores', async () => {
             vi.setSystemTime(new Date('2026-06-01T00:00:00Z').getTime() - FOURTEEN_DAYS_MS - 1000)
             await setCachedEmail('old1', mockEmail)
+            await setEmailMeta('old1', mockMeta)
             await setCachedEmail('old2', mockEmail)
+            await setEmailMeta('old2', { ...mockMeta, key: 'old2' })
 
             vi.setSystemTime(new Date('2026-06-01T00:00:00Z'))
             await setCachedEmail('fresh', mockEmail)
+            await setEmailMeta('fresh', { ...mockMeta, key: 'fresh' })
 
             await evictStaleEntries()
 
             expect(await getCachedEmail('old1')).toBeUndefined()
             expect(await getCachedEmail('old2')).toBeUndefined()
             expect(await getCachedEmail('fresh')).toEqual(mockEmail)
+
+            const metas = await getAllEmailMetas()
+            const metaKeys = metas.map((m) => m.key)
+            expect(metaKeys).not.toContain('old1')
+            expect(metaKeys).not.toContain('old2')
+            expect(metaKeys).toContain('fresh')
         })
 
         it('keeps entries younger than 14 days', async () => {
@@ -103,12 +155,15 @@ describe('cache', () => {
     })
 
     describe('clearEmailCache', () => {
-        it('removes all entries', async () => {
+        it('removes all entries from both stores', async () => {
             await setCachedEmail('key1', mockEmail)
             await setCachedEmail('key2', { ...mockEmail, key: 'key2' } as unknown as ParsedEmail)
+            await setEmailMeta('key1', mockMeta)
+            await setEmailMeta('key2', { ...mockMeta, key: 'key2' })
             await clearEmailCache()
             expect(await getCachedEmail('key1')).toBeUndefined()
             expect(await getCachedEmail('key2')).toBeUndefined()
+            expect(await getAllEmailMetas()).toEqual([])
         })
     })
 })

@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useEmailStore } from './email'
-import type { ParsedEmail } from '../parser'
+import type { EmailMeta } from '../parser'
 
-function makeEmail(key: string): ParsedEmail {
-    return { key } as ParsedEmail
+function makeMeta(key: string, overrides: Partial<EmailMeta> = {}): EmailMeta {
+    return { key, textPreview: '', ...overrides }
 }
 
 describe('email store', () => {
@@ -12,60 +12,97 @@ describe('email store', () => {
         setActivePinia(createPinia())
     })
 
-    it('starts with an empty emails map', () => {
+    it('starts with an empty s3Index and emailMeta', () => {
         const store = useEmailStore()
-        expect(store.emails.size).toBe(0)
+        expect(store.s3Index).toHaveLength(0)
+        expect(store.emailMeta.size).toBe(0)
     })
 
-    it('updateEmails populates the store and keys by email.key', () => {
-        const store = useEmailStore()
-        store.updateEmails([makeEmail('a'), makeEmail('b')])
-        expect(store.emails.size).toBe(2)
-        expect(store.emails.has('a')).toBe(true)
-        expect(store.emails.has('b')).toBe(true)
+    describe('setS3Index', () => {
+        it('replaces s3Index', () => {
+            const store = useEmailStore()
+            store.setS3Index([{ s3Key: 'a', cacheKey: 'ca' }])
+            expect(store.s3Index).toHaveLength(1)
+            store.setS3Index([
+                { s3Key: 'b', cacheKey: 'cb' },
+                { s3Key: 'c', cacheKey: 'cc' },
+            ])
+            expect(store.s3Index).toHaveLength(2)
+        })
     })
 
-    it('updateEmails replaces previous emails entirely', () => {
-        const store = useEmailStore()
-        store.updateEmails([makeEmail('old')])
-        store.updateEmails([makeEmail('new1'), makeEmail('new2')])
-        expect(store.emails.size).toBe(2)
-        expect(store.emails.has('old')).toBe(false)
+    describe('addEmailMeta', () => {
+        it('adds a metadata entry keyed by meta.key', () => {
+            const store = useEmailStore()
+            store.addEmailMeta(makeMeta('ca'))
+            expect(store.emailMeta.has('ca')).toBe(true)
+        })
+
+        it('overwrites an existing entry', () => {
+            const store = useEmailStore()
+            store.addEmailMeta(makeMeta('ca', { subject: 'old' }))
+            store.addEmailMeta(makeMeta('ca', { subject: 'new' }))
+            expect(store.emailMeta.get('ca')?.subject).toBe('new')
+        })
     })
 
-    it('updateEmail updates a single entry without clearing others', () => {
-        const store = useEmailStore()
-        store.updateEmails([makeEmail('a'), makeEmail('b')])
-        const updated = { key: 'a', subject: 'Updated' } as ParsedEmail
-        store.updateEmail(updated)
-        expect(store.emails.size).toBe(2)
-        expect(store.emails.get('a')).toStrictEqual(updated)
+    describe('setEmailMetas', () => {
+        it('replaces the entire emailMeta map', () => {
+            const store = useEmailStore()
+            store.addEmailMeta(makeMeta('ca'))
+            store.setEmailMetas([makeMeta('cb'), makeMeta('cc')])
+            expect(store.emailMeta.has('ca')).toBe(false)
+            expect(store.emailMeta.has('cb')).toBe(true)
+            expect(store.emailMeta.has('cc')).toBe(true)
+        })
     })
 
-    it('filteredEmails returns all emails when no labels are active', () => {
-        const store = useEmailStore()
-        store.updateEmails([makeEmail('a'), makeEmail('b'), makeEmail('c')])
-        expect(store.filteredEmails).toHaveLength(3)
-    })
+    describe('filteredIndex', () => {
+        it('returns all entries when no labels are active', () => {
+            const store = useEmailStore()
+            store.setS3Index([
+                { s3Key: 'a', cacheKey: 'ca' },
+                { s3Key: 'b', cacheKey: 'cb' },
+            ])
+            store.setEmailMetas([makeMeta('ca'), makeMeta('cb')])
+            expect(store.filteredIndex).toHaveLength(2)
+        })
 
-    it('filteredEmails applies label filters', () => {
-        const store = useEmailStore()
-        const a = { key: 'a', subject: 'Match' } as ParsedEmail
-        const b = { key: 'b', subject: 'Other' } as ParsedEmail
-        store.updateEmails([a, b])
-        store.addLabel({ type: 'subject', value: 'Match', f: (e) => e.subject === 'Match' })
-        expect(store.filteredEmails).toHaveLength(1)
-        expect(store.filteredEmails[0].key).toBe('a')
-    })
+        it('includes entries whose metadata has not yet loaded', () => {
+            const store = useEmailStore()
+            store.setS3Index([{ s3Key: 'a', cacheKey: 'ca' }])
+            // no emailMeta set — entry has no metadata yet
+            store.addLabel({ type: 'subject', value: 'x', f: () => false })
+            expect(store.filteredIndex).toHaveLength(1)
+        })
 
-    it('removeLabel stops its filter from applying', () => {
-        const store = useEmailStore()
-        store.updateEmails([makeEmail('a'), makeEmail('b')])
-        store.addLabel({ type: 'subject', value: '', f: () => false })
-        expect(store.filteredEmails).toHaveLength(0)
-        // retrieve the reactive reference so identity comparison inside removeLabel works
-        const storedLabel = store.labels[0]
-        store.removeLabel(storedLabel)
-        expect(store.filteredEmails).toHaveLength(2)
+        it('applies label filters to loaded metadata', () => {
+            const store = useEmailStore()
+            store.setS3Index([
+                { s3Key: 'a', cacheKey: 'ca' },
+                { s3Key: 'b', cacheKey: 'cb' },
+            ])
+            store.setEmailMetas([
+                makeMeta('ca', { subject: 'Match' }),
+                makeMeta('cb', { subject: 'Other' }),
+            ])
+            store.addLabel({ type: 'subject', value: 'Match', f: (e) => e.subject === 'Match' })
+            expect(store.filteredIndex).toHaveLength(1)
+            expect(store.filteredIndex[0].cacheKey).toBe('ca')
+        })
+
+        it('removeLabel stops its filter from applying', () => {
+            const store = useEmailStore()
+            store.setS3Index([
+                { s3Key: 'a', cacheKey: 'ca' },
+                { s3Key: 'b', cacheKey: 'cb' },
+            ])
+            store.setEmailMetas([makeMeta('ca'), makeMeta('cb')])
+            store.addLabel({ type: 'subject', value: '', f: () => false })
+            expect(store.filteredIndex).toHaveLength(0)
+            const storedLabel = store.labels[0]
+            store.removeLabel(storedLabel)
+            expect(store.filteredIndex).toHaveLength(2)
+        })
     })
 })

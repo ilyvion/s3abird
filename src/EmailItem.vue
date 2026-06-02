@@ -46,17 +46,15 @@ import parser, { type ParsedEmail } from './parser.js'
 import EmailAddress from './EmailAddress.vue'
 import { validateEffectiveConfig, decodeCacheKey } from './config.js'
 import { getCachedEmail, setCachedEmail } from './cache.js'
-import { useEmailStore } from './stores/email.js'
 import { useConfigStore } from './stores/config.js'
 
 const props = defineProps<{
     messageId: string
 }>()
 
-const emailStore = useEmailStore()
 const configStore = useConfigStore()
 
-const email = ref<ParsedEmail | undefined>(emailStore.emails.get(props.messageId))
+const email = ref<ParsedEmail | undefined>()
 const error = ref<string | null>(null)
 
 const headers = computed(() =>
@@ -64,8 +62,6 @@ const headers = computed(() =>
 )
 
 onMounted(async () => {
-    if (email.value) return
-
     if (configStore.allBuckets.length === 0) {
         error.value = 'Missing settings'
         return

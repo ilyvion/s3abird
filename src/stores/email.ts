@@ -1,30 +1,36 @@
 import { defineStore } from 'pinia'
-import type { ParsedEmail } from '../parser'
+import type { EmailMeta } from '../parser'
 import type { Label } from '../labels'
+
+export type IndexEntry = { s3Key: string; cacheKey: string }
 
 export const useEmailStore = defineStore('email', {
     state: () => ({
-        emails: new Map<string, ParsedEmail>(),
+        s3Index: [] as IndexEntry[],
+        emailMeta: new Map<string, EmailMeta>(),
         labels: [] as Label[],
     }),
     getters: {
-        filteredEmails: (state) => {
-            let result: ParsedEmail[] = []
-            state.emails.forEach((email) => result.push(email))
-            state.labels.forEach((label) => {
-                result = result.filter(label.f)
+        filteredIndex(state): IndexEntry[] {
+            if (state.labels.length === 0) return state.s3Index
+            return state.s3Index.filter(({ cacheKey }) => {
+                const meta = state.emailMeta.get(cacheKey)
+                if (!meta) return true
+                return state.labels.every((label) => label.f(meta))
             })
-            return result
         },
     },
     actions: {
-        updateEmails(emails: ParsedEmail[]) {
-            const map = new Map<string, ParsedEmail>()
-            emails.forEach((email) => map.set(email.key, email))
-            this.emails = map
+        setS3Index(items: IndexEntry[]) {
+            this.s3Index = items
         },
-        updateEmail(email: ParsedEmail) {
-            this.emails.set(email.key, email)
+        addEmailMeta(meta: EmailMeta) {
+            this.emailMeta.set(meta.key, meta)
+        },
+        setEmailMetas(metas: EmailMeta[]) {
+            const map = new Map<string, EmailMeta>()
+            metas.forEach((m) => map.set(m.key, m))
+            this.emailMeta = map
         },
         addLabel(label: Label) {
             this.labels.push(label)
