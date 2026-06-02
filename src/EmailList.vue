@@ -112,7 +112,12 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { S3Client, ListObjectsV2Command, GetObjectCommand, type _Object } from '@aws-sdk/client-s3'
+import {
+    type S3Client,
+    ListObjectsV2Command,
+    GetObjectCommand,
+    type _Object,
+} from '@aws-sdk/client-s3'
 import parser, { extractMeta, applyFormattedDate, type EmailMeta } from './parser.js'
 import Filters from './FilterList.vue'
 import EmailAddress from './EmailAddress.vue'
@@ -126,7 +131,7 @@ import {
 } from './cache.js'
 import { useEmailStore } from './stores/email.js'
 import { useConfigStore } from './stores/config.js'
-import { filterAndSortByDate, getPage, totalPages, PAGE_SIZE } from './s3Utils.js'
+import { getS3Client, filterAndSortByDate, getPage, totalPages, PAGE_SIZE } from './s3Utils.js'
 
 const CONCURRENCY_LIMIT = 10
 
@@ -195,13 +200,7 @@ async function loadFromBucket(bucketConfig: EffectiveBucketConfig): Promise<void
     const { aws_region, aws_access_key_id, aws_secret_access_key, bucket, prefix } =
         result.validatedConfig
 
-    const s3 = new S3Client({
-        region: aws_region,
-        credentials: {
-            accessKeyId: aws_access_key_id,
-            secretAccessKey: aws_secret_access_key,
-        },
-    })
+    const s3 = getS3Client(aws_region, aws_access_key_id, aws_secret_access_key)
 
     await evictStaleEntries()
     const sorted = filterAndSortByDate(await listAllObjects(s3, bucket, prefix))

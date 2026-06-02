@@ -41,11 +41,12 @@
 
 <script lang="ts" setup>
 import { ref, computed, onMounted } from 'vue'
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
+import { GetObjectCommand } from '@aws-sdk/client-s3'
 import parser, { type ParsedEmail } from './parser.js'
 import EmailAddress from './EmailAddress.vue'
 import { validateEffectiveConfig, decodeCacheKey } from './config.js'
 import { getCachedEmail, setCachedEmail } from './cache.js'
+import { getS3Client } from './s3Utils.js'
 import { useConfigStore } from './stores/config.js'
 
 const props = defineProps<{
@@ -94,13 +95,7 @@ onMounted(async () => {
         return
     }
 
-    const s3 = new S3Client({
-        region: aws_region,
-        credentials: {
-            accessKeyId: aws_access_key_id,
-            secretAccessKey: aws_secret_access_key,
-        },
-    })
+    const s3 = getS3Client(aws_region, aws_access_key_id, aws_secret_access_key)
 
     try {
         const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: info.s3Key }))

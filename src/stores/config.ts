@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import type { AwsConfig, EffectiveBucketConfig } from '../config'
 import { migrateLegacyConfig, flattenBuckets } from '../config'
 import { clearEmailCache } from '../cache'
+import { clearS3ClientCache } from '../s3Utils'
 
 function safeParseJson(s: string | undefined): unknown {
     try {
@@ -42,6 +43,7 @@ export const useConfigStore = defineStore('config', {
 
             if (JSON.stringify(oldConfig) !== JSON.stringify(newConfig)) {
                 clearEmailCache()
+                clearS3ClientCache()
             }
         },
         setActiveBucket(index: number) {

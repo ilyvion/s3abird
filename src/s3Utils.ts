@@ -1,4 +1,25 @@
+import { S3Client } from '@aws-sdk/client-s3'
 import type { _Object } from '@aws-sdk/client-s3'
+
+const clientCache = new Map<string, S3Client>()
+
+export function getS3Client(
+    region: string,
+    accessKeyId: string,
+    secretAccessKey: string
+): S3Client {
+    const key = `${region}:${accessKeyId}`
+    let client = clientCache.get(key)
+    if (!client) {
+        client = new S3Client({ region, credentials: { accessKeyId, secretAccessKey } })
+        clientCache.set(key, client)
+    }
+    return client
+}
+
+export function clearS3ClientCache(): void {
+    clientCache.clear()
+}
 
 export const PAGE_SIZE = 25
 
