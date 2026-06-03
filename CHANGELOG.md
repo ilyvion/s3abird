@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Docker nginx config now serves `index.html` as a fallback for all routes, fixing 404s when navigating directly to SPA sub-paths (e.g. `/inbox`).
+
 ## [0.4.0] - 2026-06-03
 
 ### Added
