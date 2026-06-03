@@ -25,6 +25,10 @@
                     <path d="M21 3v5h-5" />
                 </svg>
             </button>
+            <label class="label cursor-pointer gap-2">
+                <span class="text-sm">Group by thread</span>
+                <input v-model="groupThreads" type="checkbox" class="toggle toggle-sm" />
+            </label>
             <button
                 class="btn btn-ghost btn-sm ml-auto text-sm text-neutral-400"
                 @click="openModal"
@@ -68,50 +72,104 @@
                 </tr>
             </thead>
             <tbody class="block md:table-row-group">
-                <tr
-                    v-for="(meta, index) in pagedMeta"
-                    :key="meta.key"
-                    :ref="(el) => setRowRef(el as HTMLElement | null, index)"
-                    tabindex="0"
-                    class="hover:bg-base-300 max-md:border-b-base-content/5 block cursor-pointer max-md:border-b max-md:py-2 max-md:shadow-sm max-md:last:border-b-0 md:table-row"
-                    :class="{
-                        'font-semibold': !emailStore.isRead(meta.key),
-                        active: selectedIndex === index,
-                    }"
-                    @click="openEmail(meta)"
-                    @focus="selectedIndex = index"
-                    @keydown.enter.prevent="openEmail(meta)"
-                >
-                    <td
-                        class="block truncate max-md:font-semibold md:table-cell"
-                        style="max-width: 300px"
+                <template v-if="!groupThreads">
+                    <tr
+                        v-for="(meta, index) in pagedMeta"
+                        :key="meta.key"
+                        :ref="(el) => setRowRef(el as HTMLElement | null, index)"
+                        tabindex="0"
+                        class="hover:bg-base-300 max-md:border-b-base-content/5 block cursor-pointer max-md:border-b max-md:py-2 max-md:shadow-sm max-md:last:border-b-0 md:table-row"
+                        :class="{
+                            'font-semibold': !emailStore.isRead(meta.key),
+                            active: selectedIndex === index,
+                        }"
+                        @click="openEmail(meta)"
+                        @focus="selectedIndex = index"
+                        @keydown.enter.prevent="openEmail(meta)"
                     >
-                        <i
-                            :class="
-                                emailStore.isRead(meta.key)
-                                    ? 'far fa-envelope-open'
-                                    : 'fas fa-envelope'
-                            "
-                            class="mr-1 text-sm"
-                            :aria-label="emailStore.isRead(meta.key) ? 'Read' : 'Unread'"
-                        ></i>
-                        <EmailAddress :address="meta.from" />
-                    </td>
-                    <td
-                        class="block truncate max-md:text-xs md:table-cell md:w-full md:max-w-[1px] md:min-w-[300px]"
-                    >
-                        <span class="max-md:font-semibold">{{
-                            meta.subject || '(no subject)'
-                        }}</span
-                        ><span class="text-neutral-400"
-                            ><span class="max-md:hidden">&nbsp;-&nbsp;</span
-                            ><br class="md:hidden" />{{ meta.textPreview }}</span
+                        <td
+                            class="block truncate max-md:font-semibold md:table-cell"
+                            style="max-width: 300px"
                         >
-                    </td>
-                    <td class="block text-xs text-nowrap md:table-cell md:text-right">
-                        {{ meta.formattedDate }}
-                    </td>
-                </tr>
+                            <i
+                                :class="
+                                    emailStore.isRead(meta.key)
+                                        ? 'far fa-envelope-open'
+                                        : 'fas fa-envelope'
+                                "
+                                class="mr-1 text-sm"
+                                :aria-label="emailStore.isRead(meta.key) ? 'Read' : 'Unread'"
+                            ></i>
+                            <EmailAddress :address="meta.from" />
+                        </td>
+                        <td
+                            class="block truncate max-md:text-xs md:table-cell md:w-full md:max-w-[1px] md:min-w-[300px]"
+                        >
+                            <span class="max-md:font-semibold">{{
+                                meta.subject || '(no subject)'
+                            }}</span
+                            ><span class="text-neutral-400"
+                                ><span class="max-md:hidden">&nbsp;-&nbsp;</span
+                                ><br class="md:hidden" />{{ meta.textPreview }}</span
+                            >
+                        </td>
+                        <td class="block text-xs text-nowrap md:table-cell md:text-right">
+                            {{ meta.formattedDate }}
+                        </td>
+                    </tr>
+                </template>
+                <template v-else>
+                    <tr
+                        v-for="(thread, index) in pagedThreads"
+                        :key="thread.threadId"
+                        :ref="(el) => setRowRef(el as HTMLElement | null, index)"
+                        tabindex="0"
+                        class="hover:bg-base-300 max-md:border-b-base-content/5 block cursor-pointer max-md:border-b max-md:py-2 max-md:shadow-sm max-md:last:border-b-0 md:table-row"
+                        :class="{
+                            'font-semibold': !emailStore.isRead(thread.latest.key),
+                            active: selectedIndex === index,
+                        }"
+                        @click="openThread(thread)"
+                        @focus="selectedIndex = index"
+                        @keydown.enter.prevent="openThread(thread)"
+                    >
+                        <td
+                            class="block truncate max-md:font-semibold md:table-cell"
+                            style="max-width: 300px"
+                        >
+                            <i
+                                :class="
+                                    emailStore.isRead(thread.latest.key)
+                                        ? 'far fa-envelope-open'
+                                        : 'fas fa-envelope'
+                                "
+                                class="mr-1 text-sm"
+                                :aria-label="
+                                    emailStore.isRead(thread.latest.key) ? 'Read' : 'Unread'
+                                "
+                            ></i>
+                            <EmailAddress :address="thread.latest.from" />
+                        </td>
+                        <td
+                            class="block truncate max-md:text-xs md:table-cell md:w-full md:max-w-[1px] md:min-w-[300px]"
+                        >
+                            <span class="max-md:font-semibold">{{
+                                thread.latest.subject || '(no subject)'
+                            }}</span>
+                            <span
+                                v-if="thread.count > 1"
+                                class="badge badge-sm ml-1 align-middle"
+                                >{{ thread.count }}</span
+                            ><span class="text-neutral-400"
+                                ><span class="max-md:hidden">&nbsp;-&nbsp;</span
+                                ><br class="md:hidden" />{{ thread.latest.textPreview }}</span
+                            >
+                        </td>
+                        <td class="block text-xs text-nowrap md:table-cell md:text-right">
+                            {{ thread.latest.formattedDate }}
+                        </td>
+                    </tr>
+                </template>
             </tbody>
         </table>
         <div v-if="numPages > 1" class="join mt-4 flex justify-center">
@@ -151,6 +209,7 @@ import {
     type _Object,
 } from '@aws-sdk/client-s3'
 import parser, { extractMeta, applyFormattedDate, type EmailMeta } from './parser.js'
+import { groupIntoThreads, type ThreadGroup } from './threads.js'
 import Filters from './FilterList.vue'
 import EmailAddress from './EmailAddress.vue'
 import { validateEffectiveConfig, makeCacheKey, type EffectiveBucketConfig } from './config.js'
@@ -179,16 +238,50 @@ const error = ref<string | null>(null)
 const loading = ref(false)
 const currentPage = ref(1)
 const selectedIndex = ref(0)
+const groupThreads = ref(false)
 const rowRefs: (HTMLElement | null)[] = []
 
+function groupThreadsKey(bucket: EffectiveBucketConfig): string {
+    return `groupThreads:${bucketFilterId(bucket)}`
+}
+
+function loadGroupThreads(bucket: EffectiveBucketConfig): void {
+    try {
+        groupThreads.value = localStorage.getItem(groupThreadsKey(bucket)) === 'true'
+    } catch {
+        groupThreads.value = false
+    }
+}
+
+function saveGroupThreads(bucket: EffectiveBucketConfig): void {
+    try {
+        localStorage.setItem(groupThreadsKey(bucket), String(groupThreads.value))
+    } catch {
+        // ignore storage errors
+    }
+}
+
 const filteredIndex = computed(() => emailStore.filteredIndex)
-const numPages = computed(() => totalPages(filteredIndex.value.length, PAGE_SIZE))
+const numPages = computed(() =>
+    groupThreads.value
+        ? totalPages(allThreads.value.length, PAGE_SIZE)
+        : totalPages(filteredIndex.value.length, PAGE_SIZE)
+)
 const pagedMeta = computed<EmailMeta[]>(() => {
     const page = getPage(filteredIndex.value, currentPage.value, PAGE_SIZE)
     return page
         .map(({ cacheKey }) => emailStore.emailMeta.get(cacheKey))
         .filter((m): m is EmailMeta => m !== undefined)
 })
+const allThreads = computed<ThreadGroup[]>(() => {
+    const allMetas = filteredIndex.value
+        .map(({ cacheKey }) => emailStore.emailMeta.get(cacheKey))
+        .filter((m): m is EmailMeta => m !== undefined)
+    return groupIntoThreads(allMetas)
+})
+const pagedThreads = computed<ThreadGroup[]>(() =>
+    getPage(allThreads.value, currentPage.value, PAGE_SIZE)
+)
 
 watch(filteredIndex, () => {
     currentPage.value = 1
@@ -242,6 +335,14 @@ function handleKeyDown(e: KeyboardEvent) {
 function openEmail(meta: EmailMeta) {
     emailStore.markRead(meta.key)
     router.push({ path: `/inbox/${meta.key}` })
+}
+
+function openThread(thread: ThreadGroup) {
+    if (thread.count === 1) {
+        openEmail(thread.latest)
+    } else {
+        router.push({ path: `/inbox/thread/${encodeURIComponent(thread.threadId)}` })
+    }
 }
 
 async function listAllObjects(
@@ -352,6 +453,7 @@ onMounted(() => {
     const bucket = configStore.activeBucket
     if (bucket) {
         emailStore.loadPersistedFilters(bucketFilterId(bucket))
+        loadGroupThreads(bucket)
         loadEmails()
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -373,8 +475,16 @@ onUnmounted(() => {
 watch(
     () => configStore.activeBucket,
     (bucket) => {
-        if (bucket) emailStore.loadPersistedFilters(bucketFilterId(bucket))
+        if (bucket) {
+            emailStore.loadPersistedFilters(bucketFilterId(bucket))
+            loadGroupThreads(bucket)
+        }
         loadEmails(true)
     }
 )
+
+watch(groupThreads, () => {
+    const bucket = configStore.activeBucket
+    if (bucket) saveGroupThreads(bucket)
+})
 </script>

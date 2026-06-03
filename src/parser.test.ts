@@ -156,6 +156,107 @@ describe('isInlineAttachment', () => {
     })
 })
 
+describe('textAsHtml quote handling', () => {
+    it('converts >-prefixed lines to a blockquote element', async () => {
+        const raw = `From: a@b.com
+Subject: Re
+Content-Type: text/plain
+
+New reply
+
+> Original line
+`
+        const result = await parse(raw, 'key')
+        expect(result.textAsHtml).toContain('<blockquote>')
+        expect(result.textAsHtml).toContain('Original line')
+        expect(result.textAsHtml).toContain('New reply')
+    })
+
+    it('handles nested >> quote markers as nested blockquotes', async () => {
+        const raw = `From: a@b.com
+Subject: Re
+Content-Type: text/plain
+
+Top reply
+
+> First level
+>> Second level
+`
+        const result = await parse(raw, 'key')
+        // The outer blockquote wraps first-level content which itself contains a nested blockquote
+        expect((result.textAsHtml.match(/<blockquote/g) ?? []).length).toBeGreaterThanOrEqual(2)
+        expect(result.textAsHtml).toContain('First level')
+        expect(result.textAsHtml).toContain('Second level')
+    })
+
+    it('collapses content after an attribution line into a blockquote', async () => {
+        const raw = `From: a@b.com
+Subject: Re
+Content-Type: text/plain
+
+Yeah, what?
+
+On Monday, Apr 1 2003, foobar wrote:
+
+Oy!
+`
+        const result = await parse(raw, 'key')
+        expect(result.textAsHtml).toContain('<blockquote>')
+        expect(result.textAsHtml).toContain('Yeah, what?')
+        expect(result.textAsHtml).toContain('Oy!')
+        // The reply should appear before the blockquote
+        const replyPos = result.textAsHtml.indexOf('Yeah, what?')
+        const quotePos = result.textAsHtml.indexOf('<blockquote>')
+        expect(replyPos).toBeLessThan(quotePos)
+    })
+
+    it('produces no blockquote when there are no quotes or attribution lines', async () => {
+        const raw = `From: a@b.com
+Subject: Hi
+Content-Type: text/plain
+
+Just a plain message.
+`
+        const result = await parse(raw, 'key')
+        expect(result.textAsHtml).not.toContain('<blockquote>')
+    })
+})
+
+describe('extractMeta threading headers', () => {
+    it('populates messageId, inReplyTo, and references when headers are present', async () => {
+        const raw = `From: sender@example.com
+To: recipient@example.com
+Subject: Reply
+Message-ID: <reply@example.com>
+In-Reply-To: <original@example.com>
+References: <original@example.com> <other@example.com>
+Content-Type: text/plain
+
+Hello
+`
+        const parsed = await parse(raw, 'test-key')
+        const meta = extractMeta(parsed)
+        expect(meta.messageId).toBe('<reply@example.com>')
+        expect(meta.inReplyTo).toBe('<original@example.com>')
+        expect(meta.references).toEqual(['<original@example.com>', '<other@example.com>'])
+    })
+
+    it('leaves messageId, inReplyTo, and references undefined when headers are absent', async () => {
+        const raw = `From: sender@example.com
+To: recipient@example.com
+Subject: No threading headers
+Content-Type: text/plain
+
+Hello
+`
+        const parsed = await parse(raw, 'test-key')
+        const meta = extractMeta(parsed)
+        expect(meta.messageId).toBeUndefined()
+        expect(meta.inReplyTo).toBeUndefined()
+        expect(meta.references).toBeUndefined()
+    })
+})
+
 describe('applyFormattedDate', () => {
     it('sets formattedDate to toLocaleString() of email.date when present', async () => {
         const raw = `From: sender@example.com

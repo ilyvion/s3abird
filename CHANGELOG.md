@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `?` opens a keyboard shortcuts help modal (split into inbox list and email view sections); a hint button in the inbox header also opens it for mouse users.
 - Active filter labels (from/to/subject) are persisted per bucket in `localStorage` and restored on page load and bucket switch.
 - Filter badges are now keyboard focusable; pressing `Delete` while a badge is focused removes that filter.
+- Thread grouping in the inbox list: toggle "Group by thread" to cluster emails by conversation, showing the latest sender, subject, date, and a reply-count badge.
+- Conversation view at `/inbox/thread/:threadId`: clicking a multi-email thread opens a Gmail-style stacked view with each email rendered as a card, oldest-first.
+- Quote collapsing in email bodies: quoted sections (`<blockquote>`, plain-text `>` markers, attribution lines "On … wrote:", and vendor-specific containers detected by structure) are hidden behind a "··· Show quoted text" toggle by default.
 
 ### Changed
 
