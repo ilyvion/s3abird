@@ -9,9 +9,11 @@ export interface ThreadGroup {
 }
 
 export function groupIntoThreads(metas: EmailMeta[]): ThreadGroup[] {
-    // Map from Message-ID value to email key
+    // Map from Message-ID value to email key, and from key to meta
     const msgIdToKey = new Map<string, string>()
+    const keyToMeta = new Map<string, EmailMeta>()
     for (const meta of metas) {
+        keyToMeta.set(meta.key, meta)
         if (meta.messageId) {
             msgIdToKey.set(meta.messageId, meta.key)
         }
@@ -81,7 +83,7 @@ export function groupIntoThreads(metas: EmailMeta[]): ThreadGroup[] {
         const latestTimestamp = emailTimestamps.get(latest.key) ?? 0
 
         // threadId is root email's messageId, or the root key if unknown
-        const rootMeta = metas.find((m) => m.key === root)
+        const rootMeta = keyToMeta.get(root)
         const threadId = rootMeta?.messageId ?? root
 
         result.push({ threadId, emails, latest, latestTimestamp, count: emails.length })

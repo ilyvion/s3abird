@@ -152,6 +152,32 @@ describe('groupIntoThreads', () => {
         expect(threads[0].emails[1].key).toBe('msg-2')
     })
 
+    it('uses the root email messageId as threadId', () => {
+        const root = makeMeta({
+            key: 'msg-1',
+            messageId: '<root@example.com>',
+            date: '2024-01-01T10:00:00Z',
+        })
+        const reply = makeMeta({
+            key: 'msg-2',
+            messageId: '<reply@example.com>',
+            inReplyTo: '<root@example.com>',
+            date: '2024-01-01T11:00:00Z',
+        })
+
+        const threads = groupIntoThreads([root, reply])
+
+        expect(threads[0].threadId).toBe('<root@example.com>')
+    })
+
+    it('falls back to root key as threadId when root email has no messageId', () => {
+        const root = makeMeta({ key: 'msg-no-id', date: '2024-01-01T10:00:00Z' })
+
+        const threads = groupIntoThreads([root])
+
+        expect(threads[0].threadId).toBe('msg-no-id')
+    })
+
     it('connects emails via References even without In-Reply-To', () => {
         const root = makeMeta({
             key: 'msg-root',
