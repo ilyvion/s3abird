@@ -173,6 +173,29 @@ describe('cache', () => {
         it('is a no-op on an empty cache', async () => {
             await expect(evictStaleEntries()).resolves.toBeUndefined()
         })
+
+        it('evicts all stale entries in a batch when multiple are present', async () => {
+            vi.setSystemTime(new Date('2026-06-01T00:00:00Z').getTime() - FOURTEEN_DAYS_MS - 1000)
+            for (const key of ['stale-a', 'stale-b', 'stale-c']) {
+                await setCachedEmail(key, mockEmail)
+                await setEmailMeta(key, { ...mockMeta, key })
+            }
+            vi.setSystemTime(new Date('2026-06-01T00:00:00Z'))
+            await setCachedEmail('fresh', mockEmail)
+            await setEmailMeta('fresh', { ...mockMeta, key: 'fresh' })
+
+            await evictStaleEntries()
+
+            for (const key of ['stale-a', 'stale-b', 'stale-c']) {
+                expect(await getCachedEmail(key)).toBeUndefined()
+            }
+            const metaKeys = (await getAllEmailMetas()).map((m) => m.key)
+            expect(metaKeys).not.toContain('stale-a')
+            expect(metaKeys).not.toContain('stale-b')
+            expect(metaKeys).not.toContain('stale-c')
+            expect(metaKeys).toContain('fresh')
+            expect(await getCachedEmail('fresh')).toEqual(mockEmail)
+        })
     })
 
     describe('clearEmailCache', () => {

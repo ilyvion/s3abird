@@ -65,15 +65,18 @@ export async function evictStaleEntries() {
     const db = await dbPromise
     const cutoff = Date.now() - FOURTEEN_DAYS_MS
     const tx = db.transaction(['emails', 'email-meta'], 'readwrite')
+    const staleKeys: IDBValidKey[] = []
     let cursor = await tx.objectStore('emails').openCursor()
     while (cursor) {
-        const entry = cursor.value as CacheEntry
-        if (entry.cachedAt < cutoff) {
-            await cursor.delete()
-            await tx.objectStore('email-meta').delete(cursor.key)
-        }
+        if ((cursor.value as CacheEntry).cachedAt < cutoff) staleKeys.push(cursor.key)
         cursor = await cursor.continue()
     }
+    await Promise.all(
+        staleKeys.flatMap((key) => [
+            tx.objectStore('emails').delete(key),
+            tx.objectStore('email-meta').delete(key),
+        ])
+    )
     await tx.done
 }
 
