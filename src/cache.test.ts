@@ -18,6 +18,9 @@ import type { ParsedEmail, EmailMeta } from './parser'
 
 const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000
 
+// ParsedEmail extends postal-mime's Email which requires headers, headerLines, and attachments.
+// Tests only exercise cache storage/retrieval so a minimal object suffices; full construction
+// would be disproportionate effort.
 const mockEmail = {
     key: 'test-key',
     textAsHtml: '<p>Hello</p>',
@@ -163,6 +166,7 @@ describe('cache', () => {
     describe('clearEmailCache', () => {
         it('removes all entries from both stores', async () => {
             await setCachedEmail('key1', mockEmail)
+            // Same reason as mockEmail above: minimal spread to vary the key.
             await setCachedEmail('key2', { ...mockEmail, key: 'key2' } as unknown as ParsedEmail)
             await setEmailMeta('key1', mockMeta)
             await setEmailMeta('key2', { ...mockMeta, key: 'key2' })

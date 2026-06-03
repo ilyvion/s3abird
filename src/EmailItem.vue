@@ -150,7 +150,7 @@ onMounted(async () => {
         await setCachedEmail(props.messageId, parsed)
         email.value = parsed
         emailStore.markRead(props.messageId)
-    } catch (err: unknown) {
+    } catch (err) {
         error.value = err instanceof Error ? err.message : 'Unknown error while loading email'
     }
 })

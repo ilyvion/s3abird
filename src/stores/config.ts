@@ -4,9 +4,9 @@ import { migrateLegacyConfig, flattenBuckets } from '../config'
 import { clearEmailCacheForBuckets } from '../cache'
 import { clearS3ClientCache } from '../s3Utils'
 
-function safeParseJson(s: string | undefined): unknown {
+function parseStoredConfig(s: string | undefined): AwsConfig | null {
     try {
-        return JSON.parse(s || 'null')
+        return migrateLegacyConfig(JSON.parse(s || 'null'))
     } catch {
         return null
     }
@@ -14,7 +14,7 @@ function safeParseJson(s: string | undefined): unknown {
 
 export const useConfigStore = defineStore('config', {
     state: () => ({
-        config: migrateLegacyConfig(safeParseJson(localStorage.config)) as AwsConfig | null,
+        config: parseStoredConfig(localStorage.config),
         activeBucketIndex: parseInt(localStorage.activeBucketIndex || '0', 10),
     }),
     getters: {

@@ -40,27 +40,29 @@ export function flattenBuckets(config: AwsConfig): EffectiveBucketConfig[] {
     )
 }
 
+interface LegacyConfig {
+    aws_region?: string
+    aws_access_key_id?: string
+    aws_secret_access_key?: string
+    bucket?: string
+    prefix?: string
+}
+
 export function migrateLegacyConfig(raw: unknown): AwsConfig | null {
     if (!raw || typeof raw !== 'object') return null
     const obj = raw as Record<string, unknown>
 
     // Current format
     if ('credentials' in obj && Array.isArray(obj.credentials)) {
+        // Record<string,unknown> and AwsConfig don't overlap, so an intermediate unknown
+        // cast is unavoidable; the guard above already verified credentials is an array.
         return obj as unknown as AwsConfig
     }
 
     // Previous format: { buckets: AwsBucketConfig[] } where each had its own credentials
     if ('buckets' in obj && Array.isArray(obj.buckets)) {
-        type PrevBucket = {
-            label?: string
-            aws_region: string
-            aws_access_key_id: string
-            aws_secret_access_key: string
-            bucket: string
-            prefix?: string
-        }
         return {
-            credentials: (obj.buckets as PrevBucket[]).map((b) => ({
+            credentials: (obj.buckets as EffectiveBucketConfig[]).map((b) => ({
                 label: b.label,
                 aws_access_key_id: b.aws_access_key_id,
                 aws_secret_access_key: b.aws_secret_access_key,
@@ -77,13 +79,6 @@ export function migrateLegacyConfig(raw: unknown): AwsConfig | null {
     }
 
     // Legacy format: flat single-bucket config
-    type LegacyConfig = {
-        aws_region?: string
-        aws_access_key_id?: string
-        aws_secret_access_key?: string
-        bucket?: string
-        prefix?: string
-    }
     const legacy = obj as LegacyConfig
     if (!legacy.aws_region && !legacy.bucket) return null
 
@@ -154,9 +149,13 @@ export function makeCacheKey(config: EffectiveBucketConfig, s3Key: string): stri
     return btoa(String.fromCharCode(...bytes))
 }
 
-export function decodeCacheKey(
-    cacheKey: string
-): { aws_region: string; bucket: string; s3Key: string } | null {
+export interface DecodedCacheKey {
+    aws_region: string
+    bucket: string
+    s3Key: string
+}
+
+export function decodeCacheKey(cacheKey: string): DecodedCacheKey | null {
     try {
         const decoded = new TextDecoder().decode(
             Uint8Array.from(atob(cacheKey), (c) => c.charCodeAt(0))

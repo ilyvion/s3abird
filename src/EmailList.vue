@@ -264,7 +264,7 @@ async function loadEmails(force = false) {
 
     try {
         await loadFromBucket(activeBucket)
-    } catch (e: unknown) {
+    } catch (e) {
         error.value = e instanceof Error ? e.message : 'Unknown error while loading emails'
     } finally {
         loading.value = false

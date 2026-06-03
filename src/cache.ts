@@ -5,6 +5,11 @@ import { decodeCacheKey } from './config'
 
 const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000
 
+interface BucketLocator {
+    aws_region: string
+    bucket: string
+}
+
 interface CacheEntry {
     email: ParsedEmail
     cachedAt: number
@@ -82,9 +87,7 @@ export async function getReadKeys(): Promise<Set<string>> {
     return new Set(keys as string[])
 }
 
-export async function clearEmailCacheForBuckets(
-    buckets: Array<{ aws_region: string; bucket: string }>
-): Promise<void> {
+export async function clearEmailCacheForBuckets(buckets: BucketLocator[]): Promise<void> {
     if (buckets.length === 0) return
     const targets = new Set(buckets.map((b) => `${b.aws_region}|${b.bucket}`))
     const db = await dbPromise

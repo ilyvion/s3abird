@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest'
 import parse, { extractMeta, applyFormattedDate, isInlineAttachment } from './parser'
+import type { Attachment } from 'postal-mime'
 
 const RAW_EMAIL_WITH_ANGLE_BRACKET_ADDRESS = `From: sender@example.com
 To: recipient@example.com
@@ -105,14 +106,13 @@ iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAA
 })
 
 describe('isInlineAttachment', () => {
-    const att = (extra: object = {}) =>
-        ({
-            content: '',
-            mimeType: 'image/png',
-            filename: null,
-            disposition: 'attachment',
-            ...extra,
-        }) as unknown as Parameters<typeof isInlineAttachment>[0]
+    const att = (extra: Partial<Attachment> = {}): Attachment => ({
+        content: '',
+        mimeType: 'image/png',
+        filename: null,
+        disposition: 'attachment',
+        ...extra,
+    })
 
     it('returns false when attachment has no contentId', () => {
         expect(isInlineAttachment(att(), '<img src="cid:foo">')).toBe(false)
