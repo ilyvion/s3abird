@@ -32,7 +32,7 @@ const Subject = (text: string): Label => {
     return {
         type: 'subject',
         value: text,
-        f: (e: FilterableEmail) => (e.subject?.toLowerCase().indexOf(needle) ?? -1) !== -1,
+        f: (e: FilterableEmail) => e.subject?.toLowerCase().includes(needle) ?? false,
     }
 }
 
@@ -41,7 +41,7 @@ const Body = (text: string): Label => {
     return {
         type: 'body',
         value: text,
-        f: (e: FilterableEmail) => (e.textPreview?.toLowerCase().indexOf(needle) ?? -1) !== -1,
+        f: (e: FilterableEmail) => e.textPreview?.toLowerCase().includes(needle) ?? false,
     }
 }
 
@@ -105,7 +105,7 @@ export { To, From, Subject, Body, parse, serialize, deserialize }
 function address_contains(address: Address, needle: string) {
     const n = needle.toLowerCase()
     return (
-        address.name.toLowerCase().indexOf(n) !== -1 ||
-        (address.address?.toLowerCase().indexOf(n) ?? -1) !== -1
+        address.name.toLowerCase().includes(n) ||
+        (address.address?.toLowerCase().includes(n) ?? false)
     )
 }
