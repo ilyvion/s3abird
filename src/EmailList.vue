@@ -25,6 +25,12 @@
                     <path d="M21 3v5h-5" />
                 </svg>
             </button>
+            <button
+                class="btn btn-ghost btn-sm ml-auto text-sm text-neutral-400"
+                @click="openModal"
+            >
+                Press <kbd class="kbd kbd-xs">?</kbd> for keyboard shortcuts
+            </button>
         </div>
 
         <Filters class="mb-3" />
@@ -63,11 +69,18 @@
             </thead>
             <tbody class="block md:table-row-group">
                 <tr
-                    v-for="meta in pagedMeta"
+                    v-for="(meta, index) in pagedMeta"
                     :key="meta.key"
+                    :ref="(el) => setRowRef(el as HTMLElement | null, index)"
+                    tabindex="0"
                     class="hover:bg-base-300 max-md:border-b-base-content/5 block cursor-pointer max-md:border-b max-md:py-2 max-md:shadow-sm max-md:last:border-b-0 md:table-row"
-                    :class="{ 'font-semibold': !emailStore.isRead(meta.key) }"
+                    :class="{
+                        'font-semibold': !emailStore.isRead(meta.key),
+                        active: selectedIndex === index,
+                    }"
                     @click="openEmail(meta)"
+                    @focus="selectedIndex = index"
+                    @keydown.enter.prevent="openEmail(meta)"
                 >
                     <td
                         class="block truncate max-md:font-semibold md:table-cell"
@@ -120,7 +133,16 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import {
+    ref,
+    computed,
+    onMounted,
+    onUnmounted,
+    onActivated,
+    onDeactivated,
+    watch,
+    nextTick,
+} from 'vue'
 import { useRouter } from 'vue-router'
 import {
     type S3Client,
@@ -143,6 +165,7 @@ import {
 import { useEmailStore } from './stores/email.js'
 import { useConfigStore } from './stores/config.js'
 import { getS3Client, filterAndSortByDate, getPage, totalPages, PAGE_SIZE } from './s3Utils.js'
+import { useKeyboardShortcutsModal } from './useKeyboardShortcutsModal.js'
 
 const CONCURRENCY_LIMIT = 10
 
@@ -150,10 +173,13 @@ const emailStore = useEmailStore()
 const configStore = useConfigStore()
 
 const router = useRouter()
+const { showShortcutsModal, openModal } = useKeyboardShortcutsModal()
 
 const error = ref<string | null>(null)
 const loading = ref(false)
 const currentPage = ref(1)
+const selectedIndex = ref(0)
+const rowRefs: (HTMLElement | null)[] = []
 
 const filteredIndex = computed(() => emailStore.filteredIndex)
 const numPages = computed(() => totalPages(filteredIndex.value.length, PAGE_SIZE))
@@ -167,6 +193,51 @@ const pagedMeta = computed<EmailMeta[]>(() => {
 watch(filteredIndex, () => {
     currentPage.value = 1
 })
+
+watch(pagedMeta, () => {
+    selectedIndex.value = 0
+})
+
+watch(selectedIndex, async (index) => {
+    await nextTick()
+    rowRefs[index]?.focus()
+})
+
+function setRowRef(el: HTMLElement | null, index: number) {
+    rowRefs[index] = el
+}
+
+function isInputFocused(): boolean {
+    const el = document.activeElement
+    return (
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        (el instanceof HTMLElement && el.isContentEditable)
+    )
+}
+
+function handleKeyDown(e: KeyboardEvent) {
+    if (isInputFocused()) return
+    if (showShortcutsModal.value) return
+
+    const len = pagedMeta.value.length
+    if (len === 0) return
+
+    if (e.key === 'j' || e.key === 'ArrowDown') {
+        e.preventDefault()
+        selectedIndex.value = Math.min(selectedIndex.value + 1, len - 1)
+    } else if (e.key === 'k' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        selectedIndex.value = Math.max(selectedIndex.value - 1, 0)
+    } else if (e.key === 'Enter') {
+        const meta = pagedMeta.value[selectedIndex.value]
+        if (meta) openEmail(meta)
+    } else if (e.key === ']' || e.key === 'ArrowRight') {
+        if (currentPage.value < numPages.value) currentPage.value++
+    } else if (e.key === '[' || e.key === 'ArrowLeft') {
+        if (currentPage.value > 1) currentPage.value--
+    }
+}
 
 function openEmail(meta: EmailMeta) {
     emailStore.markRead(meta.key)
@@ -273,6 +344,20 @@ async function loadEmails(force = false) {
 
 onMounted(() => {
     if (configStore.activeBucket) loadEmails()
+    window.addEventListener('keydown', handleKeyDown)
+})
+
+onActivated(() => {
+    rowRefs[selectedIndex.value]?.focus()
+    window.addEventListener('keydown', handleKeyDown)
+})
+
+onDeactivated(() => {
+    window.removeEventListener('keydown', handleKeyDown)
+})
+
+onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeyDown)
 })
 
 watch(

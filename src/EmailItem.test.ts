@@ -1,10 +1,17 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import EmailItem from './EmailItem.vue'
 import type { ParsedEmail } from './parser.js'
 import * as cacheModule from './cache.js'
+import { useKeyboardShortcutsModal } from './useKeyboardShortcutsModal.js'
+
+const mockRouterPush = vi.fn()
+
+vi.mock('vue-router', () => ({
+    useRouter: () => ({ push: mockRouterPush }),
+}))
 
 vi.mock('./cache.js', () => ({
     getCachedEmail: vi.fn().mockResolvedValue(undefined),
@@ -25,7 +32,15 @@ vi.mock('./parser.js', async (importOriginal) => {
 beforeEach(() => {
     setActivePinia(createPinia())
     localStorage.clear()
+    mockRouterPush.mockClear()
     vi.mocked(cacheModule.getCachedEmail).mockResolvedValue(undefined)
+    const { showShortcutsModal } = useKeyboardShortcutsModal()
+    showShortcutsModal.value = false
+})
+
+afterEach(() => {
+    const { showShortcutsModal } = useKeyboardShortcutsModal()
+    showShortcutsModal.value = false
 })
 
 describe('EmailItem error display', () => {
@@ -227,5 +242,72 @@ describe('EmailItem headers computed', () => {
 
         // Original array must not be mutated
         expect(email.headers!.map((h) => h.key)).toEqual(['subject', 'date', 'from'])
+    })
+})
+
+describe('EmailItem keyboard back navigation', () => {
+    it('pressing Escape navigates back to /inbox', async () => {
+        const wrapper = mount(EmailItem, {
+            props: { messageId: 'test-id' },
+            global: { stubs: { EmailAddress: true } },
+        })
+        await flushPromises()
+
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+        await flushPromises()
+
+        expect(mockRouterPush).toHaveBeenCalledWith('/inbox')
+        wrapper.unmount()
+    })
+
+    it('pressing u navigates back to /inbox', async () => {
+        const wrapper = mount(EmailItem, {
+            props: { messageId: 'test-id' },
+            global: { stubs: { EmailAddress: true } },
+        })
+        await flushPromises()
+
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'u', bubbles: true }))
+        await flushPromises()
+
+        expect(mockRouterPush).toHaveBeenCalledWith('/inbox')
+        wrapper.unmount()
+    })
+
+    it('Escape does not navigate back when shortcuts modal is open', async () => {
+        const { showShortcutsModal } = useKeyboardShortcutsModal()
+        showShortcutsModal.value = true
+
+        const wrapper = mount(EmailItem, {
+            props: { messageId: 'test-id' },
+            global: { stubs: { EmailAddress: true } },
+        })
+        await flushPromises()
+
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+        await flushPromises()
+
+        expect(mockRouterPush).not.toHaveBeenCalled()
+        wrapper.unmount()
+    })
+
+    it('navigation shortcuts are suppressed when an input is focused', async () => {
+        const wrapper = mount(EmailItem, {
+            props: { messageId: 'test-id' },
+            global: { stubs: { EmailAddress: true } },
+        })
+        await flushPromises()
+
+        const input = document.createElement('input')
+        document.body.appendChild(input)
+        input.focus()
+
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+        await flushPromises()
+
+        expect(mockRouterPush).not.toHaveBeenCalled()
+
+        input.remove()
+        wrapper.unmount()
     })
 })

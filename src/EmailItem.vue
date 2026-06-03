@@ -59,7 +59,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { type Attachment } from 'postal-mime'
 import parser, { type ParsedEmail, attachmentToBase64, isInlineAttachment } from './parser.js'
@@ -69,6 +69,8 @@ import { getCachedEmail, setCachedEmail } from './cache.js'
 import { getS3Client } from './s3Utils.js'
 import { useConfigStore } from './stores/config.js'
 import { useEmailStore } from './stores/email.js'
+import { useRouter } from 'vue-router'
+import { useKeyboardShortcutsModal } from './useKeyboardShortcutsModal.js'
 
 const props = defineProps<{
     messageId: string
@@ -76,6 +78,29 @@ const props = defineProps<{
 
 const configStore = useConfigStore()
 const emailStore = useEmailStore()
+const router = useRouter()
+const { showShortcutsModal } = useKeyboardShortcutsModal()
+
+function handleKeyDown(e: KeyboardEvent) {
+    if (showShortcutsModal.value) return
+    const el = document.activeElement
+    const isInput =
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        (el instanceof HTMLElement && el.isContentEditable)
+    if (isInput) return
+    if (e.key === 'Escape' || e.key === 'Backspace' || e.key === 'u') {
+        router.push('/inbox')
+    }
+}
+
+onMounted(() => {
+    window.addEventListener('keydown', handleKeyDown)
+})
+
+onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeyDown)
+})
 
 const email = ref<ParsedEmail | undefined>()
 const error = ref<string | null>(null)

@@ -30,18 +30,45 @@
             </div>
         </div>
     </div>
+
+    <KeyboardShortcutsModal v-model="showShortcutsModal" />
 </template>
 <script lang="ts" setup>
-import { onBeforeUnmount } from 'vue'
+import { onMounted, onBeforeUnmount } from 'vue'
 import Settings from './AwsSettings.vue'
 import BucketSelector from './BucketSelector.vue'
 import Navbar from './MainNavbar.vue'
 import Footer from './MainFooter.vue'
+import KeyboardShortcutsModal from './KeyboardShortcutsModal.vue'
 import { useEffectiveTheme } from './useEffectiveTheme'
+import { useKeyboardShortcutsModal } from './useKeyboardShortcutsModal.js'
 
 const { applyThemeToDocument, dispose } = useEffectiveTheme()
 applyThemeToDocument()
 onBeforeUnmount(dispose)
+
+const { showShortcutsModal } = useKeyboardShortcutsModal()
+
+function handleKeyDown(e: KeyboardEvent) {
+    if (showShortcutsModal.value) return
+    const el = document.activeElement
+    const isInput =
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        (el instanceof HTMLElement && el.isContentEditable)
+    if (isInput) return
+    if (e.key === '?') {
+        showShortcutsModal.value = true
+    }
+}
+
+onMounted(() => {
+    window.addEventListener('keydown', handleKeyDown)
+})
+
+onBeforeUnmount(() => {
+    window.removeEventListener('keydown', handleKeyDown)
+})
 </script>
 <style scoped lang="css">
 .container:has(.animate__fadeInLeft, .animate__fadeOutRight) {
