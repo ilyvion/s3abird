@@ -20,6 +20,21 @@ function makeLabel(type: Label['type'], value: string): Label {
     return { type, value, f: () => true }
 }
 
+describe('FilterList body badge', () => {
+    it('typing "body: test" and submitting creates a badge of type body', async () => {
+        const wrapper = mount(FilterList)
+        const input = wrapper.find('input')
+
+        await input.setValue('body: test')
+        await wrapper.find('form').trigger('submit')
+
+        const emailStore = useEmailStore()
+        expect(emailStore.labels).toHaveLength(1)
+        expect(emailStore.labels[0].type).toBe('body')
+        expect(emailStore.labels[0].value).toBe('test')
+    })
+})
+
 beforeEach(() => {
     setActivePinia(createPinia())
     localStorage.clear()

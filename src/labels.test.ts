@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { Email } from 'postal-mime'
-import { To, From, Subject, parse, serialize, deserialize } from './labels'
+import { To, From, Subject, Body, parse, serialize, deserialize } from './labels'
 
 function makeEmail(overrides: Partial<Email> = {}): Email {
     return {
@@ -73,6 +73,28 @@ describe('From filter', () => {
     })
 })
 
+describe('Body filter', () => {
+    it('matches when textPreview contains the text', () => {
+        const filter = Body('hello')
+        expect(filter.f({ textPreview: 'say hello world' })).toBe(true)
+    })
+
+    it('does not match when textPreview does not contain the text', () => {
+        const filter = Body('hello')
+        expect(filter.f({ textPreview: 'goodbye' })).toBe(false)
+    })
+
+    it('does not match when textPreview is absent', () => {
+        const filter = Body('hello')
+        expect(filter.f({})).toBe(false)
+    })
+
+    it('matches case-insensitively', () => {
+        const filter = Body('HELLO')
+        expect(filter.f({ textPreview: 'say hello world' })).toBe(true)
+    })
+})
+
 describe('parse', () => {
     it('returns null for strings without a colon', () => {
         expect(parse('nocolon')).toBeNull()
@@ -95,6 +117,13 @@ describe('parse', () => {
         const label = parse('from:bob')
         expect(label).not.toBeNull()
         expect(label!.type).toBe('from')
+    })
+
+    it('parses a body label with multi-word value', () => {
+        const label = parse('body: foo bar')
+        expect(label).not.toBeNull()
+        expect(label!.type).toBe('body')
+        expect(label!.value).toBe('foo bar')
     })
 
     it('returns null for unknown label types', () => {
@@ -140,6 +169,14 @@ describe('serialize / deserialize', () => {
         const email = makeEmail({ subject: 'Hello world' })
         const [label] = deserialize(serialize([Subject('Hello')]))
         expect(label.f(email)).toBe(true)
+    })
+
+    it('round-trips a Body label', () => {
+        const labels = [Body('keyword')]
+        const result = deserialize(serialize(labels))
+        expect(result).toHaveLength(1)
+        expect(result[0].type).toBe('body')
+        expect(result[0].value).toBe('keyword')
     })
 
     it('silently drops labels with unrecognized types', () => {

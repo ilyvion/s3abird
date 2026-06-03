@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multi-select checkboxes in the inbox list; a select-all header checkbox shows indeterminate state when some rows are selected; selecting a thread row in grouped mode selects all emails in that thread.
 - Bulk action bar above the inbox table showing the selected count, a "Mark as read" button, and a "Clear selection" button.
 - `x` and `Space` keyboard shortcuts toggle the selection of the currently highlighted inbox row.
+- `body:` filter label searches the first 200 characters of each email's body text (case-insensitive); body filter badges render in a distinct secondary color.
 
 ### Changed
 

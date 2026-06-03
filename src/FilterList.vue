@@ -18,8 +18,12 @@
                     <li><code>to: hello@example.com</code></li>
                     <li><code>from: hi@example.com</code></li>
                     <li><code>subject: Important</code></li>
+                    <li><code>body: keyword</code></li>
                 </ul>
-                <p class="mt-1 text-xs opacity-70">Press Enter to add the filter.</p>
+                <p class="mt-1 text-xs opacity-70">
+                    Press Enter to add the filter. Note: <code>body:</code> only searches the first
+                    200 characters of each email.
+                </p>
             </div>
         </form>
         Filters:
@@ -27,7 +31,8 @@
         <span
             v-for="(labelEntry, index) in labelList"
             :key="'filter-' + index"
-            class="badge badge-accent gap-0"
+            class="badge gap-0"
+            :class="labelEntry.type === 'body' ? 'badge-secondary' : 'badge-accent'"
             tabindex="0"
             role="button"
             :aria-label="`Filter: ${labelEntry.type}: ${labelEntry.value}. Press Delete to remove.`"

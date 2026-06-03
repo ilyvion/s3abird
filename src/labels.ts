@@ -1,9 +1,11 @@
 import type { Address, Email } from 'postal-mime'
 
-export type FilterableEmail = Pick<Email, 'from' | 'to' | 'subject'>
+export type FilterableEmail = Pick<Email, 'from' | 'to' | 'subject'> & {
+    textPreview?: string
+}
 
 export type Label = {
-    type: 'to' | 'from' | 'subject'
+    type: 'to' | 'from' | 'subject' | 'body'
     value: string
     f: (e: FilterableEmail) => boolean
 }
@@ -34,6 +36,15 @@ const Subject = (text: string): Label => {
     }
 }
 
+const Body = (text: string): Label => {
+    const needle = text.toLowerCase()
+    return {
+        type: 'body',
+        value: text,
+        f: (e: FilterableEmail) => (e.textPreview?.toLowerCase().indexOf(needle) ?? -1) !== -1,
+    }
+}
+
 const parse = (s: string) => {
     let i = s.indexOf(':')
     if (i == -1) {
@@ -50,6 +61,8 @@ const parse = (s: string) => {
             return From(value)
         case 'subject':
             return Subject(value)
+        case 'body':
+            return Body(value)
     }
 
     return null
@@ -76,6 +89,8 @@ function deserialize(s: string): Label[] {
                     return [From(item.value)]
                 case 'subject':
                     return [Subject(item.value)]
+                case 'body':
+                    return [Body(item.value)]
                 default:
                     return []
             }
@@ -85,7 +100,7 @@ function deserialize(s: string): Label[] {
     }
 }
 
-export { To, From, Subject, parse, serialize, deserialize }
+export { To, From, Subject, Body, parse, serialize, deserialize }
 
 function address_contains(address: Address, needle: string) {
     const n = needle.toLowerCase()
