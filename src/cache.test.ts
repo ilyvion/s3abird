@@ -73,6 +73,18 @@ describe('cache', () => {
             expect(await getCachedEmail('old-key')).toBeUndefined()
         })
 
+        it('also removes the email-meta entry when evicting a stale email on demand', async () => {
+            vi.setSystemTime(new Date('2026-06-01T00:00:00Z').getTime() - FOURTEEN_DAYS_MS - 1)
+            await setCachedEmail('stale-key', mockEmail)
+            await setEmailMeta('stale-key', mockMeta)
+            vi.setSystemTime(new Date('2026-06-01T00:00:00Z'))
+
+            await getCachedEmail('stale-key')
+
+            const metas = await getAllEmailMetas()
+            expect(metas.find((m) => m.key === 'stale-key')).toBeUndefined()
+        })
+
         it('returns the email for an entry at exactly the 14-day boundary', async () => {
             vi.setSystemTime(new Date('2026-06-01T00:00:00Z').getTime() - FOURTEEN_DAYS_MS)
             await setCachedEmail('boundary-key', mockEmail)

@@ -106,6 +106,6 @@ function address_contains(address: Address, needle: string) {
     const n = needle.toLowerCase()
     return (
         address.name.toLowerCase().indexOf(n) !== -1 ||
-        address.address?.toLowerCase().indexOf(n) !== -1
+        (address.address?.toLowerCase().indexOf(n) ?? -1) !== -1
     )
 }

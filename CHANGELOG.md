@@ -51,6 +51,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix(useEffectiveTheme): expose dispose() to remove MediaQueryList listener on unmount
 - Config changes now evict only the email cache and read/unread status for buckets that were removed or modified, instead of wiping all caches on any change. Labels and other non-data fields can be edited freely without affecting cached data.
 - "None" placeholder in filter list was invisible due to `text-accent-content` being intended for use on accent-colored backgrounds.
+- `textAsHtml` (plain-text-to-HTML conversion) is now passed through `DOMPurify.sanitize()`, preventing XSS via crafted URLs that break out of `href` attributes.
+- `to:`/`from:` address filters no longer spuriously match every email when a group/list address has no `address` field (optional-chaining returning `undefined` was treated as truthy).
+- Keyboard navigation in thread mode now uses the thread row count as its bound and routes `Enter` to `openThread()` instead of always calling `openEmail()`.
+- On-demand stale-cache eviction in `getCachedEmail` now also deletes the corresponding `email-meta` entry, consistent with the background `evictStaleEntries` sweep.
+- `emailStore.markRead()` is now awaited at both call sites in `useEmailLoader`, so IndexedDB persistence errors are no longer silently swallowed.
 
 ## [0.3.0] - 2026-06-01
 

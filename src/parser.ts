@@ -63,7 +63,7 @@ export default async function (email: RawEmail, emailKey: string): Promise<Parse
     }
 
     let extended = parsed as ParsedEmail
-    extended.textAsHtml = textToHtml(extended.text)
+    extended.textAsHtml = DOMPurify.sanitize(textToHtml(extended.text))
     extended.key = emailKey
     extended.rawMessageId = rawMessageId
     extended.rawInReplyTo = rawInReplyTo

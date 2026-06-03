@@ -39,6 +39,7 @@ export async function getCachedEmail(key: string): Promise<ParsedEmail | undefin
     if (!entry) return undefined
     if (entry.cachedAt < Date.now() - FOURTEEN_DAYS_MS) {
         await db.delete('emails', key)
+        await db.delete('email-meta', key)
         return undefined
     }
     return entry.email

@@ -392,7 +392,7 @@ function handleKeyDown(e: KeyboardEvent) {
     if (isInputFocused()) return
     if (showShortcutsModal.value) return
 
-    const len = pagedMeta.value.length
+    const len = groupThreads.value ? pagedThreads.value.length : pagedMeta.value.length
     if (len === 0) return
 
     if (e.key === 'j' || e.key === 'ArrowDown') {
@@ -402,8 +402,13 @@ function handleKeyDown(e: KeyboardEvent) {
         e.preventDefault()
         selectedIndex.value = Math.max(selectedIndex.value - 1, 0)
     } else if (e.key === 'Enter') {
-        const meta = pagedMeta.value[selectedIndex.value]
-        if (meta) openEmail(meta)
+        if (groupThreads.value) {
+            const thread = pagedThreads.value[selectedIndex.value]
+            if (thread) openThread(thread)
+        } else {
+            const meta = pagedMeta.value[selectedIndex.value]
+            if (meta) openEmail(meta)
+        }
     } else if (e.key === ']' || e.key === 'ArrowRight') {
         if (currentPage.value < numPages.value) currentPage.value++
     } else if (e.key === '[' || e.key === 'ArrowLeft') {

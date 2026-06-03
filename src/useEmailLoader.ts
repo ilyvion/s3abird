@@ -43,7 +43,7 @@ export function useEmailLoader(messageId: string) {
         const cached = await getCachedEmail(messageId)
         if (cached) {
             email.value = cached
-            emailStore.markRead(messageId)
+            await emailStore.markRead(messageId)
             return
         }
 
@@ -59,7 +59,7 @@ export function useEmailLoader(messageId: string) {
             const parsed = await parser(body, messageId)
             await setCachedEmail(messageId, parsed)
             email.value = parsed
-            emailStore.markRead(messageId)
+            await emailStore.markRead(messageId)
         } catch (err) {
             error.value = err instanceof Error ? err.message : 'Unknown error while loading email'
         }

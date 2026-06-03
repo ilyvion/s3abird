@@ -24,6 +24,37 @@ describe('parser', () => {
         })
     })
 
+    describe('textAsHtml XSS sanitization', () => {
+        it('sanitizes event-handler injection via crafted URL in linkify', async () => {
+            const raw = `From: sender@example.com
+To: recipient@example.com
+Subject: XSS test
+Content-Type: text/plain
+
+Visit https://evil.com/" onmouseover="alert(1) for details.
+`
+            const result = await parse(raw, 'test-key')
+            // DOMPurify strips the injected attribute — verify no element carries it
+            const div = document.createElement('div')
+            div.innerHTML = result.textAsHtml
+            div.querySelectorAll('*').forEach((el) => {
+                expect(el.getAttribute('onmouseover')).toBeNull()
+            })
+        })
+
+        it('sanitizes script tags in textAsHtml', async () => {
+            const raw = `From: sender@example.com
+To: recipient@example.com
+Subject: XSS test
+Content-Type: text/plain
+
+Hello <script>alert(1)</script> world
+`
+            const result = await parse(raw, 'test-key')
+            expect(result.textAsHtml).not.toContain('<script>')
+        })
+    })
+
     describe('HTML emails', () => {
         it('sanitizes HTML content', async () => {
             const rawHtml = `From: sender@example.com

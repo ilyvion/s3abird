@@ -71,6 +71,29 @@ describe('From filter', () => {
         const filter = From('BOB')
         expect(filter.f(makeEmail({ from: { address: 'bob@example.com', name: '' } }))).toBe(true)
     })
+
+    it('does not match a group address (undefined address field) when name also does not match', () => {
+        const filter = From('nobody')
+        expect(
+            filter.f(makeEmail({ from: { address: undefined, name: 'SomeGroup', group: [] } }))
+        ).toBe(false)
+    })
+})
+
+describe('To filter group-address bug', () => {
+    it('does not match a group address when the search term is not in the name', () => {
+        const filter = To('nobody')
+        expect(
+            filter.f(makeEmail({ to: [{ address: undefined, name: 'SomeList', group: [] }] }))
+        ).toBe(false)
+    })
+
+    it('matches a group address when the search term is in the name', () => {
+        const filter = To('somelist')
+        expect(
+            filter.f(makeEmail({ to: [{ address: undefined, name: 'SomeList', group: [] }] }))
+        ).toBe(true)
+    })
 })
 
 describe('Body filter', () => {
