@@ -99,7 +99,7 @@ fi
 unreleased_pattern="^\[Unreleased\]: $repo_url/compare/v${old_version}\.\.\.HEAD"
 if grep -Eq "$unreleased_pattern" "$changelog_file"; then
     sed -i "s|v${old_version}...HEAD|v${new_version}...HEAD|" "$changelog_file"
-    sed -i "/^\[Unreleased\]:/a[${new_version}]: ${repo_url}/compare/v${old_version}..v${new_version}" "$changelog_file"
+    sed -i "/^\[Unreleased\]:/a[${new_version}]: ${repo_url}/compare/v${old_version}...v${new_version}" "$changelog_file"
 else
     echo "Expected [Unreleased] link with v${old_version} not found in $changelog_file"
     exit 1
