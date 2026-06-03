@@ -9,6 +9,7 @@ import * as cacheModule from './cache.js'
 vi.mock('./cache.js', () => ({
     getCachedEmail: vi.fn().mockResolvedValue(undefined),
     setCachedEmail: vi.fn().mockResolvedValue(undefined),
+    markAsRead: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('@aws-sdk/client-s3', () => ({

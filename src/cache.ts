@@ -9,7 +9,7 @@ interface CacheEntry {
     cachedAt: number
 }
 
-const dbPromise = openDB('email-cache', 3, {
+const dbPromise = openDB('email-cache', 4, {
     upgrade(db, oldVersion) {
         if (oldVersion < 2) {
             // Entries from v1 have no timestamp; drop and recreate the store.
@@ -20,6 +20,9 @@ const dbPromise = openDB('email-cache', 3, {
         }
         if (oldVersion < 3) {
             db.createObjectStore('email-meta')
+        }
+        if (oldVersion < 4) {
+            db.createObjectStore('read-status')
         }
     },
 })
@@ -67,10 +70,22 @@ export async function evictStaleEntries() {
     await tx.done
 }
 
+export async function markAsRead(key: string): Promise<void> {
+    const db = await dbPromise
+    await db.put('read-status', { readAt: Date.now() }, key)
+}
+
+export async function getReadKeys(): Promise<Set<string>> {
+    const db = await dbPromise
+    const keys = await db.getAllKeys('read-status')
+    return new Set(keys as string[])
+}
+
 export async function clearEmailCache() {
     const db = await dbPromise
-    const tx = db.transaction(['emails', 'email-meta'], 'readwrite')
+    const tx = db.transaction(['emails', 'email-meta', 'read-status'], 'readwrite')
     await tx.objectStore('emails').clear()
     await tx.objectStore('email-meta').clear()
+    await tx.objectStore('read-status').clear()
     await tx.done
 }

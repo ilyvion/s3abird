@@ -66,12 +66,22 @@
                     v-for="meta in pagedMeta"
                     :key="meta.key"
                     class="hover:bg-base-300 max-md:border-b-base-content/5 block cursor-pointer max-md:border-b max-md:py-2 max-md:shadow-sm max-md:last:border-b-0 md:table-row"
+                    :class="{ 'font-semibold': !emailStore.isRead(meta.key) }"
                     @click="openEmail(meta)"
                 >
                     <td
                         class="block truncate max-md:font-semibold md:table-cell"
                         style="max-width: 300px"
                     >
+                        <i
+                            :class="
+                                emailStore.isRead(meta.key)
+                                    ? 'far fa-envelope-open'
+                                    : 'fas fa-envelope'
+                            "
+                            class="mr-1 text-sm"
+                            :aria-label="emailStore.isRead(meta.key) ? 'Read' : 'Unread'"
+                        ></i>
                         <EmailAddress :address="meta.from" />
                     </td>
                     <td
@@ -128,6 +138,7 @@ import {
     setEmailMeta,
     getAllEmailMetas,
     evictStaleEntries,
+    getReadKeys,
 } from './cache.js'
 import { useEmailStore } from './stores/email.js'
 import { useConfigStore } from './stores/config.js'
@@ -158,6 +169,7 @@ watch(filteredIndex, () => {
 })
 
 function openEmail(meta: EmailMeta) {
+    emailStore.markRead(meta.key)
     router.push({ path: `/inbox/${meta.key}` })
 }
 
@@ -209,6 +221,7 @@ async function loadFromBucket(bucketConfig: EffectiveBucketConfig): Promise<void
         .filter((item) => !!item.Key)
         .map((item) => ({ s3Key: item.Key!, cacheKey: makeCacheKey(bucketConfig, item.Key!) }))
     emailStore.setS3Index(s3Index)
+    emailStore.setReadKeys(await getReadKeys())
 
     // Load all cached metadata into the store immediately so the list renders without waiting
     const cachedMetas = await getAllEmailMetas()

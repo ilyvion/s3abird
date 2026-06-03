@@ -68,12 +68,14 @@ import { validateEffectiveConfig, decodeCacheKey } from './config.js'
 import { getCachedEmail, setCachedEmail } from './cache.js'
 import { getS3Client } from './s3Utils.js'
 import { useConfigStore } from './stores/config.js'
+import { useEmailStore } from './stores/email.js'
 
 const props = defineProps<{
     messageId: string
 }>()
 
 const configStore = useConfigStore()
+const emailStore = useEmailStore()
 
 const email = ref<ParsedEmail | undefined>()
 const error = ref<string | null>(null)
@@ -131,6 +133,7 @@ onMounted(async () => {
     const cached = await getCachedEmail(props.messageId)
     if (cached) {
         email.value = cached
+        emailStore.markRead(props.messageId)
         return
     }
 
@@ -146,6 +149,7 @@ onMounted(async () => {
         const parsed = await parser(body, props.messageId)
         await setCachedEmail(props.messageId, parsed)
         email.value = parsed
+        emailStore.markRead(props.messageId)
     } catch (err: unknown) {
         error.value = err instanceof Error ? err.message : 'Unknown error while loading email'
     }

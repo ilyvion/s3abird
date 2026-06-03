@@ -1,7 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useEmailStore } from './email'
 import type { EmailMeta } from '../parser'
+
+vi.mock('../cache', () => ({
+    markAsRead: vi.fn().mockResolvedValue(undefined),
+}))
 
 function makeMeta(key: string, overrides: Partial<EmailMeta> = {}): EmailMeta {
     return { key, textPreview: '', formattedDate: '', ...overrides }
@@ -16,6 +20,11 @@ describe('email store', () => {
         const store = useEmailStore()
         expect(store.s3Index).toHaveLength(0)
         expect(store.emailMeta.size).toBe(0)
+    })
+
+    it('starts with an empty readKeys set', () => {
+        const store = useEmailStore()
+        expect(store.readKeys.size).toBe(0)
     })
 
     describe('setS3Index', () => {
@@ -103,6 +112,58 @@ describe('email store', () => {
             const storedLabel = store.labels[0]
             store.removeLabel(storedLabel)
             expect(store.filteredIndex).toHaveLength(2)
+        })
+    })
+
+    describe('setReadKeys', () => {
+        it('replaces the readKeys set', () => {
+            const store = useEmailStore()
+            store.setReadKeys(new Set(['key1', 'key2']))
+            expect(store.readKeys.has('key1')).toBe(true)
+            expect(store.readKeys.has('key2')).toBe(true)
+            store.setReadKeys(new Set(['key3']))
+            expect(store.readKeys.has('key1')).toBe(false)
+            expect(store.readKeys.has('key3')).toBe(true)
+        })
+    })
+
+    describe('markRead', () => {
+        it('adds the key to readKeys', async () => {
+            const store = useEmailStore()
+            await store.markRead('key1')
+            expect(store.readKeys.has('key1')).toBe(true)
+        })
+
+        it('calling markRead twice does not error and key remains present', async () => {
+            const store = useEmailStore()
+            await store.markRead('key1')
+            await store.markRead('key1')
+            expect(store.readKeys.has('key1')).toBe(true)
+        })
+    })
+
+    describe('isRead', () => {
+        it('returns false for a key that has not been marked read', () => {
+            const store = useEmailStore()
+            expect(store.isRead('key1')).toBe(false)
+        })
+
+        it('returns true after setReadKeys includes the key', () => {
+            const store = useEmailStore()
+            store.setReadKeys(new Set(['key1']))
+            expect(store.isRead('key1')).toBe(true)
+        })
+
+        it('returns true after markRead', async () => {
+            const store = useEmailStore()
+            await store.markRead('key1')
+            expect(store.isRead('key1')).toBe(true)
+        })
+
+        it('returns false for a key not in readKeys', () => {
+            const store = useEmailStore()
+            store.setReadKeys(new Set(['key1']))
+            expect(store.isRead('key2')).toBe(false)
         })
     })
 })

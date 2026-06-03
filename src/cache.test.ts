@@ -8,6 +8,8 @@ import {
     getAllEmailMetas,
     clearEmailCache,
     evictStaleEntries,
+    markAsRead,
+    getReadKeys,
 } from './cache'
 import type { ParsedEmail, EmailMeta } from './parser'
 
@@ -165,6 +167,38 @@ describe('cache', () => {
             expect(await getCachedEmail('key1')).toBeUndefined()
             expect(await getCachedEmail('key2')).toBeUndefined()
             expect(await getAllEmailMetas()).toEqual([])
+        })
+    })
+
+    describe('markAsRead / getReadKeys', () => {
+        it('getReadKeys returns an empty set when no keys are marked', async () => {
+            expect(await getReadKeys()).toEqual(new Set())
+        })
+
+        it('markAsRead then getReadKeys returns the key', async () => {
+            await markAsRead('key1')
+            expect(await getReadKeys()).toEqual(new Set(['key1']))
+        })
+
+        it('a second call to markAsRead does not error and key remains present', async () => {
+            await markAsRead('key1')
+            await expect(markAsRead('key1')).resolves.toBeUndefined()
+            expect(await getReadKeys()).toEqual(new Set(['key1']))
+        })
+
+        it('marks multiple keys and returns all of them', async () => {
+            await markAsRead('key1')
+            await markAsRead('key2')
+            const keys = await getReadKeys()
+            expect(keys).toContain('key1')
+            expect(keys).toContain('key2')
+            expect(keys.size).toBe(2)
+        })
+
+        it('clearEmailCache removes read-status entries', async () => {
+            await markAsRead('key1')
+            await clearEmailCache()
+            expect(await getReadKeys()).toEqual(new Set())
         })
     })
 })

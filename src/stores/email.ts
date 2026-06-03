@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import type { EmailMeta } from '../parser'
 import type { Label } from '../labels'
+import { markAsRead } from '../cache'
 
 export type IndexEntry = { s3Key: string; cacheKey: string }
 
@@ -9,6 +10,7 @@ export const useEmailStore = defineStore('email', {
         s3Index: [] as IndexEntry[],
         emailMeta: new Map<string, EmailMeta>(),
         labels: [] as Label[],
+        readKeys: new Set<string>(),
     }),
     getters: {
         filteredIndex(state): IndexEntry[] {
@@ -18,6 +20,9 @@ export const useEmailStore = defineStore('email', {
                 if (!meta) return true
                 return state.labels.every((label) => label.f(meta))
             })
+        },
+        isRead(state): (key: string) => boolean {
+            return (key: string) => state.readKeys.has(key)
         },
     },
     actions: {
@@ -37,6 +42,13 @@ export const useEmailStore = defineStore('email', {
         },
         removeLabel(label: Label) {
             this.labels = this.labels.filter((l) => l !== label)
+        },
+        setReadKeys(keys: Set<string>) {
+            this.readKeys = keys
+        },
+        async markRead(key: string) {
+            this.readKeys.add(key)
+            await markAsRead(key)
         },
     },
 })

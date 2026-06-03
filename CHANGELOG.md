@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - IndexedDB email cache now evicts entries older than 14 days; stale entries are removed on each inbox load and lazily on individual reads.
 - Attachments section in the email detail view listing non-inline attachments (filename, MIME type, download button); inline detection uses `Content-Disposition: inline` and `cid:` HTML presence.
+- Read/unread tracking: unread emails display bold text and a solid envelope icon (`fas fa-envelope`); read emails show an open envelope icon (`far fa-envelope-open`). Read state is persisted to IndexedDB across page reloads and marked automatically when an email is opened.
 
 ### Changed
 
