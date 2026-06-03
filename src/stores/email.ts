@@ -5,6 +5,8 @@ import { serialize, deserialize } from '../labels'
 import { markAsRead } from '../cache'
 import { useConfigStore } from './config'
 import type { EffectiveBucketConfig } from '../config'
+import { groupIntoThreads } from '../threads'
+import type { ThreadGroup } from '../threads'
 
 function bucketFilterKey(bucket: EffectiveBucketConfig): string {
     const id = bucket.prefix
@@ -33,6 +35,12 @@ export const useEmailStore = defineStore('email', {
         },
         isRead(state): (key: string) => boolean {
             return (key: string) => state.readKeys.has(key)
+        },
+        threads(state): ThreadGroup[] {
+            return groupIntoThreads(Array.from(state.emailMeta.values()))
+        },
+        getThread(): (threadId: string) => ThreadGroup | undefined {
+            return (threadId: string) => this.threads.find((t) => t.threadId === threadId)
         },
     },
     actions: {

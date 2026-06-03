@@ -41,7 +41,6 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEmailStore } from './stores/email.js'
-import { groupIntoThreads } from './threads.js'
 import { useKeyboardShortcutsModal } from './useKeyboardShortcutsModal.js'
 import { useInboxLoader } from './useInboxLoader.js'
 import ThreadEmailCard from './ThreadEmailCard.vue'
@@ -59,10 +58,8 @@ const { showShortcutsModal } = useKeyboardShortcutsModal()
 const { loading, loadEmails } = useInboxLoader()
 
 const threadEmails = computed<EmailMeta[]>(() => {
-    const allMetas = Array.from(emailStore.emailMeta.values())
-    const threads = groupIntoThreads(allMetas)
     const decodedId = decodeURIComponent(props.threadId)
-    return threads.find((t) => t.threadId === decodedId)?.emails ?? []
+    return emailStore.getThread(decodedId)?.emails ?? []
 })
 
 const subject = computed(

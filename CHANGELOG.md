@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `clearEmailCache` and `evictStaleEntries` now atomically clean both the `emails` and `email-meta` IndexedDB stores
 - S3Client instances are now reused across loads via a module-level cache keyed by `region:accessKeyId`; the cache is cleared alongside the email cache on config change.
 - Filter expressions now match case-insensitively for `to`, `from`, and `subject` fields.
+- `ThreadView` now reads thread membership from a shared `threads` store getter instead of calling `groupIntoThreads` over the full inbox on every reactive update, eliminating redundant re-grouping during inbox load.
 
 ### Fixed
 

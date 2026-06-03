@@ -187,6 +187,62 @@ describe('email store', () => {
         })
     })
 
+    describe('threads', () => {
+        it('returns an empty array when emailMeta is empty', () => {
+            const store = useEmailStore()
+            expect(store.threads).toHaveLength(0)
+        })
+
+        it('groups emails by reply chain into a single thread', () => {
+            const store = useEmailStore()
+            store.setEmailMetas([
+                makeMeta('msg-1', { messageId: '<root@example.com>' }),
+                makeMeta('msg-2', {
+                    messageId: '<reply@example.com>',
+                    inReplyTo: '<root@example.com>',
+                }),
+            ])
+            expect(store.threads).toHaveLength(1)
+            expect(store.threads[0].emails).toHaveLength(2)
+        })
+
+        it('treats unrelated emails as separate threads', () => {
+            const store = useEmailStore()
+            store.setEmailMetas([
+                makeMeta('msg-1', { messageId: '<a@example.com>' }),
+                makeMeta('msg-2', { messageId: '<b@example.com>' }),
+            ])
+            expect(store.threads).toHaveLength(2)
+        })
+    })
+
+    describe('getThread', () => {
+        it('returns undefined for an unknown threadId', () => {
+            const store = useEmailStore()
+            expect(store.getThread('nonexistent')).toBeUndefined()
+        })
+
+        it('returns the matching thread by threadId', () => {
+            const store = useEmailStore()
+            store.setEmailMetas([
+                makeMeta('msg-1', { messageId: '<root@example.com>' }),
+                makeMeta('msg-2', {
+                    messageId: '<reply@example.com>',
+                    inReplyTo: '<root@example.com>',
+                }),
+            ])
+            const thread = store.getThread('<root@example.com>')
+            expect(thread).toBeDefined()
+            expect(thread!.emails).toHaveLength(2)
+        })
+
+        it('returns undefined when the threadId matches no thread after addEmailMeta updates', () => {
+            const store = useEmailStore()
+            store.addEmailMeta(makeMeta('msg-1', { messageId: '<a@example.com>' }))
+            expect(store.getThread('<b@example.com>')).toBeUndefined()
+        })
+    })
+
     describe('localStorage persistence', () => {
         it('addLabel writes serialized filters to localStorage under the active bucket key', () => {
             const configStore = useConfigStore()
