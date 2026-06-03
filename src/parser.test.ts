@@ -134,6 +134,39 @@ iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAA
             expect(result.textAsHtml).toContain('&lt;user@example.com&gt;')
         })
     })
+
+    describe('processedHtml', () => {
+        it('is populated at parse time from textAsHtml for plain-text emails', async () => {
+            const result = await parse(RAW_EMAIL_WITH_ANGLE_BRACKET_ADDRESS, 'test-key')
+            expect(typeof result.processedHtml).toBe('string')
+            expect(result.processedHtml.length).toBeGreaterThan(0)
+        })
+
+        it('wraps blockquotes at parse time for emails with quoted content', async () => {
+            const raw = `From: a@b.com
+Subject: Re
+Content-Type: text/plain
+
+New reply
+
+> Original line
+`
+            const result = await parse(raw, 'key')
+            expect(result.processedHtml).toContain('<details')
+        })
+
+        it('is populated from html for HTML emails', async () => {
+            const raw = `From: a@b.com
+Subject: Html
+Content-Type: text/html
+
+<p>Hello</p><blockquote><p>Quoted</p></blockquote>
+`
+            const result = await parse(raw, 'key')
+            expect(result.processedHtml).toContain('<details')
+            expect(result.processedHtml).toContain('Hello')
+        })
+    })
 })
 
 describe('isInlineAttachment', () => {

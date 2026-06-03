@@ -5,14 +5,19 @@ import EmailDisplay from './EmailDisplay.vue'
 import type { ParsedEmail } from './parser.js'
 
 function makeEmail(overrides: Partial<ParsedEmail> = {}): ParsedEmail {
-    return {
+    const base = {
         subject: 'Test subject',
         textAsHtml: '<p>body</p>',
+        processedHtml: '<p>body</p>',
         key: 'test-key',
         attachments: [],
         headers: [],
-        ...overrides,
-    } as ParsedEmail
+    }
+    const merged = { ...base, ...overrides }
+    if (!overrides.processedHtml && overrides.textAsHtml) {
+        merged.processedHtml = overrides.textAsHtml
+    }
+    return merged as ParsedEmail
 }
 
 const stubs = { EmailAddress: true }

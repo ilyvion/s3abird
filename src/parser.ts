@@ -1,10 +1,12 @@
 import createDOMPurify from 'dompurify'
 import PostalMime, { type Address, type Attachment, type Email, type RawEmail } from 'postal-mime'
+import { collapseBlockquotes } from './quoteCollapser.js'
 
 const DOMPurify = createDOMPurify(window)
 
 export type ParsedEmail = Email & {
     textAsHtml: string
+    processedHtml: string
     key: string
     rawMessageId?: string
     rawInReplyTo?: string
@@ -83,6 +85,8 @@ export default async function (email: RawEmail, emailKey: string): Promise<Parse
         }
         extended.html = DOMPurify.sanitize(extended.html)
     }
+
+    extended.processedHtml = collapseBlockquotes(extended.html || extended.textAsHtml)
 
     return extended
 }

@@ -57,7 +57,6 @@
 import { computed } from 'vue'
 import { type Attachment } from 'postal-mime'
 import { type ParsedEmail, attachmentToBase64, isInlineAttachment } from './parser.js'
-import { collapseBlockquotes } from './quoteCollapser.js'
 import EmailAddress from './EmailAddress.vue'
 
 interface Props {
@@ -66,9 +65,7 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const processedHtml = computed(() =>
-    collapseBlockquotes(props.email.html || props.email.textAsHtml)
-)
+const processedHtml = computed(() => props.email.processedHtml)
 
 const sortedHeaders = computed(() =>
     (props.email.headers || []).slice().sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
