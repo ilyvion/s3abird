@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Escape`, `Backspace`, or `u` navigates back to the inbox from an email.
 - `?` opens a keyboard shortcuts help modal (split into inbox list and email view sections); a hint button in the inbox header also opens it for mouse users.
 - Active filter labels (from/to/subject) are persisted per bucket in `localStorage` and restored on page load and bucket switch.
+- Filter badges are now keyboard focusable; pressing `Delete` while a badge is focused removes that filter.
 
 ### Changed
 

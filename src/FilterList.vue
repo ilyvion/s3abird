@@ -14,6 +14,10 @@
             v-for="(labelEntry, index) in labelList"
             :key="'filter-' + index"
             class="badge badge-accent gap-0"
+            tabindex="0"
+            role="button"
+            :aria-label="`Filter: ${labelEntry.type}: ${labelEntry.value}. Press Delete to remove.`"
+            @keydown.delete="removeLabel(labelEntry)"
             ><strong>{{ labelEntry.type }}</strong
             >: {{ labelEntry.value }}
             <i

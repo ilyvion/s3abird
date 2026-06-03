@@ -49,6 +49,21 @@
                     </tr>
                 </tbody>
             </table>
+            <h4 class="mb-1 font-semibold">Filters</h4>
+            <table class="mb-4 table">
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><kbd class="kbd kbd-sm">Delete</kbd></td>
+                        <td>Remove focused filter badge</td>
+                    </tr>
+                </tbody>
+            </table>
             <h4 class="mb-1 font-semibold">Email view</h4>
             <table class="table">
                 <thead>
