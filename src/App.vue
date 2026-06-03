@@ -3,7 +3,7 @@
         <input id="menu-drawer" type="checkbox" class="drawer-toggle" />
         <div class="drawer-content flex h-screen flex-col">
             <Navbar />
-            <div class="bg-base-200 container mx-auto flex-grow overflow-auto">
+            <div class="bg-base-200 container mx-auto flex-grow overflow-auto" tabindex="-1">
                 <div class="bg-light rounded px-3 py-2">
                     <router-view v-slot="{ Component }">
                         <transition
