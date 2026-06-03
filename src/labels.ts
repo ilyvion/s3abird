@@ -54,7 +54,37 @@ const parse = (s: string) => {
     return null
 }
 
-export { To, From, Subject, parse }
+interface SerializedLabel {
+    type: string
+    value: string
+}
+
+function serialize(labels: Label[]): string {
+    return JSON.stringify(labels.map(({ type, value }): SerializedLabel => ({ type, value })))
+}
+
+function deserialize(s: string): Label[] {
+    try {
+        const items = JSON.parse(s) as SerializedLabel[]
+        if (!Array.isArray(items)) return []
+        return items.flatMap((item): Label[] => {
+            switch (item.type) {
+                case 'to':
+                    return [To(item.value)]
+                case 'from':
+                    return [From(item.value)]
+                case 'subject':
+                    return [Subject(item.value)]
+                default:
+                    return []
+            }
+        })
+    } catch {
+        return []
+    }
+}
+
+export { To, From, Subject, parse, serialize, deserialize }
 
 function address_contains(address: Address, needle: string) {
     return address.name.indexOf(needle) !== -1 || address.address?.indexOf(needle) !== -1

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { Email } from 'postal-mime'
-import { To, From, Subject, parse } from './labels'
+import { To, From, Subject, parse, serialize, deserialize } from './labels'
 
 function makeEmail(overrides: Partial<Email> = {}): Email {
     return {
@@ -77,5 +77,65 @@ describe('parse', () => {
 
     it('returns null for unknown label types', () => {
         expect(parse('unknown:value')).toBeNull()
+    })
+})
+
+describe('serialize / deserialize', () => {
+    it('round-trips a To label', () => {
+        const labels = [To('alice@example.com')]
+        const result = deserialize(serialize(labels))
+        expect(result).toHaveLength(1)
+        expect(result[0].type).toBe('to')
+        expect(result[0].value).toBe('alice@example.com')
+    })
+
+    it('round-trips a From label', () => {
+        const labels = [From('bob@example.com')]
+        const result = deserialize(serialize(labels))
+        expect(result).toHaveLength(1)
+        expect(result[0].type).toBe('from')
+        expect(result[0].value).toBe('bob@example.com')
+    })
+
+    it('round-trips a Subject label', () => {
+        const labels = [Subject('Important')]
+        const result = deserialize(serialize(labels))
+        expect(result).toHaveLength(1)
+        expect(result[0].type).toBe('subject')
+        expect(result[0].value).toBe('Important')
+    })
+
+    it('round-trips multiple labels of different types', () => {
+        const labels = [To('alice@example.com'), From('bob@example.com'), Subject('Hello')]
+        const result = deserialize(serialize(labels))
+        expect(result).toHaveLength(3)
+        expect(result[0].type).toBe('to')
+        expect(result[1].type).toBe('from')
+        expect(result[2].type).toBe('subject')
+    })
+
+    it('reconstructed labels have working filter functions', () => {
+        const email = makeEmail({ subject: 'Hello world' })
+        const [label] = deserialize(serialize([Subject('Hello')]))
+        expect(label.f(email)).toBe(true)
+    })
+
+    it('silently drops labels with unrecognized types', () => {
+        const raw = JSON.stringify([
+            { type: 'unknown', value: 'x' },
+            { type: 'subject', value: 'keep' },
+        ])
+        const result = deserialize(raw)
+        expect(result).toHaveLength(1)
+        expect(result[0].type).toBe('subject')
+        expect(result[0].value).toBe('keep')
+    })
+
+    it('returns empty array for invalid JSON', () => {
+        expect(deserialize('not json')).toEqual([])
+    })
+
+    it('returns empty array for non-array JSON', () => {
+        expect(deserialize('"string"')).toEqual([])
     })
 })

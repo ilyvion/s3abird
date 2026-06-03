@@ -1,11 +1,30 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useEmailStore } from './email'
+import { useConfigStore } from './config'
 import type { EmailMeta } from '../parser'
+import type { AwsConfig } from '../config'
+import { From, Subject, serialize } from '../labels'
 
 vi.mock('../cache', () => ({
     markAsRead: vi.fn().mockResolvedValue(undefined),
+    clearEmailCacheForBuckets: vi.fn().mockResolvedValue(undefined),
 }))
+
+vi.mock('../s3Utils', () => ({ clearS3ClientCache: vi.fn() }))
+
+const storageMock: Record<string, string> = {}
+vi.stubGlobal('localStorage', storageMock)
+
+const singleBucketConfig: AwsConfig = {
+    credentials: [
+        {
+            aws_access_key_id: 'AKID',
+            aws_secret_access_key: 'secret',
+            buckets: [{ aws_region: 'us-east-1', bucket: 'my-bucket' }],
+        },
+    ],
+}
 
 function makeMeta(key: string, overrides: Partial<EmailMeta> = {}): EmailMeta {
     return { key, textPreview: '', formattedDate: '', ...overrides }
@@ -13,6 +32,7 @@ function makeMeta(key: string, overrides: Partial<EmailMeta> = {}): EmailMeta {
 
 describe('email store', () => {
     beforeEach(() => {
+        for (const k of Object.keys(storageMock)) delete storageMock[k]
         setActivePinia(createPinia())
     })
 
@@ -164,6 +184,68 @@ describe('email store', () => {
             const store = useEmailStore()
             store.setReadKeys(new Set(['key1']))
             expect(store.isRead('key2')).toBe(false)
+        })
+    })
+
+    describe('localStorage persistence', () => {
+        it('addLabel writes serialized filters to localStorage under the active bucket key', () => {
+            const configStore = useConfigStore()
+            configStore.updateConfig(singleBucketConfig)
+
+            const store = useEmailStore()
+            store.addLabel(From('alice@example.com'))
+
+            const key = 'filters:us-east-1:my-bucket'
+            expect(storageMock[key]).toBeDefined()
+            const parsed = JSON.parse(storageMock[key]) as { type: string; value: string }[]
+            expect(parsed).toHaveLength(1)
+            expect(parsed[0].type).toBe('from')
+            expect(parsed[0].value).toBe('alice@example.com')
+        })
+
+        it('removeLabel updates localStorage after removal', () => {
+            const configStore = useConfigStore()
+            configStore.updateConfig(singleBucketConfig)
+
+            const store = useEmailStore()
+            store.addLabel(From('alice@example.com'))
+            store.addLabel(Subject('Hello'))
+            const labelToRemove = store.labels[0]
+            store.removeLabel(labelToRemove)
+
+            const key = 'filters:us-east-1:my-bucket'
+            const parsed = JSON.parse(storageMock[key]) as { type: string; value: string }[]
+            expect(parsed).toHaveLength(1)
+            expect(parsed[0].type).toBe('subject')
+        })
+
+        it('loadPersistedFilters restores labels from a pre-populated localStorage entry', () => {
+            storageMock['filters:us-east-1:my-bucket'] = serialize([
+                Subject('important'),
+                From('bob@example.com'),
+            ])
+
+            const store = useEmailStore()
+            store.loadPersistedFilters('us-east-1:my-bucket')
+
+            expect(store.labels).toHaveLength(2)
+            expect(store.labels[0].type).toBe('subject')
+            expect(store.labels[0].value).toBe('important')
+            expect(store.labels[1].type).toBe('from')
+            expect(store.labels[1].value).toBe('bob@example.com')
+        })
+
+        it('loadPersistedFilters clears labels when no entry exists for the bucket', () => {
+            const store = useEmailStore()
+            store.addLabel(Subject('old filter'))
+            store.loadPersistedFilters('us-east-1:empty-bucket')
+            expect(store.labels).toHaveLength(0)
+        })
+
+        it('addLabel does not write to localStorage when no active bucket is configured', () => {
+            const store = useEmailStore()
+            store.addLabel(Subject('test'))
+            expect(Object.keys(storageMock).some((k) => k.startsWith('filters:'))).toBe(false)
         })
     })
 })

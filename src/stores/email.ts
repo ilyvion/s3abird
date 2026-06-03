@@ -1,7 +1,17 @@
 import { defineStore } from 'pinia'
 import type { EmailMeta } from '../parser'
 import type { Label } from '../labels'
+import { serialize, deserialize } from '../labels'
 import { markAsRead } from '../cache'
+import { useConfigStore } from './config'
+import type { EffectiveBucketConfig } from '../config'
+
+function bucketFilterKey(bucket: EffectiveBucketConfig): string {
+    const id = bucket.prefix
+        ? `${bucket.aws_region}:${bucket.bucket}:${bucket.prefix}`
+        : `${bucket.aws_region}:${bucket.bucket}`
+    return `filters:${id}`
+}
 
 export type IndexEntry = { s3Key: string; cacheKey: string }
 
@@ -39,9 +49,17 @@ export const useEmailStore = defineStore('email', {
         },
         addLabel(label: Label) {
             this.labels.push(label)
+            const bucket = useConfigStore().activeBucket
+            if (bucket) localStorage[bucketFilterKey(bucket)] = serialize(this.labels)
         },
         removeLabel(label: Label) {
             this.labels = this.labels.filter((l) => l !== label)
+            const bucket = useConfigStore().activeBucket
+            if (bucket) localStorage[bucketFilterKey(bucket)] = serialize(this.labels)
+        },
+        loadPersistedFilters(bucketId: string) {
+            const stored = localStorage[`filters:${bucketId}`] as string | undefined
+            this.labels = stored ? deserialize(stored) : []
         },
         setReadKeys(keys: Set<string>) {
             this.readKeys = keys

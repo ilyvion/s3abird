@@ -342,8 +342,18 @@ async function loadEmails(force = false) {
     }
 }
 
+function bucketFilterId(bucket: EffectiveBucketConfig): string {
+    return bucket.prefix
+        ? `${bucket.aws_region}:${bucket.bucket}:${bucket.prefix}`
+        : `${bucket.aws_region}:${bucket.bucket}`
+}
+
 onMounted(() => {
-    if (configStore.activeBucket) loadEmails()
+    const bucket = configStore.activeBucket
+    if (bucket) {
+        emailStore.loadPersistedFilters(bucketFilterId(bucket))
+        loadEmails()
+    }
     window.addEventListener('keydown', handleKeyDown)
 })
 
@@ -362,7 +372,8 @@ onUnmounted(() => {
 
 watch(
     () => configStore.activeBucket,
-    () => {
+    (bucket) => {
+        if (bucket) emailStore.loadPersistedFilters(bucketFilterId(bucket))
         loadEmails(true)
     }
 )

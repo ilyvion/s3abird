@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keyboard navigation in the inbox list: `j`/`↓` and `k`/`↑` move row selection, `Enter` opens the selected email, `]`/`→` and `[`/`←` change pages.
 - `Escape`, `Backspace`, or `u` navigates back to the inbox from an email.
 - `?` opens a keyboard shortcuts help modal (split into inbox list and email view sections); a hint button in the inbox header also opens it for mouse users.
+- Active filter labels (from/to/subject) are persisted per bucket in `localStorage` and restored on page load and bucket switch.
 
 ### Changed
 
