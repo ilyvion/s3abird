@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `setCachedEmail` and `setEmailMeta` IndexedDB writes now run concurrently per fetched email instead of sequentially.
 - `evictStaleEntries` now collects stale keys in a single cursor pass and issues all deletes concurrently, avoiding sequential awaits inside the cursor loop.
 - `markSelectedRead` now issues all `markRead` IndexedDB writes concurrently via `Promise.all` instead of sequentially.
+- `selectionState` in `EmailList` now counts selected items with a plain loop instead of allocating an intermediate array via `filter`.
 
 ### Fixed
 

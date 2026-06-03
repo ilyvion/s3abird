@@ -341,7 +341,8 @@ const pageEmailKeys = computed<string[]>(() => {
 const selectionState = computed<SelectionState>(() => {
     const keys = pageEmailKeys.value
     if (keys.length === 0) return 'none'
-    const selectedOnPage = keys.filter((k) => selectedKeys.value.has(k)).length
+    let selectedOnPage = 0
+    for (const k of keys) if (selectedKeys.value.has(k)) selectedOnPage++
     if (selectedOnPage === 0) return 'none'
     if (selectedOnPage === keys.length) return 'all'
     return 'some'

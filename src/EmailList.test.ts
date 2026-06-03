@@ -595,6 +595,60 @@ describe('EmailList multi-select thread mode', () => {
     })
 })
 
+describe('EmailList selectionState', () => {
+    function setupStore(keys: string[]) {
+        const store = useEmailStore()
+        store.setS3Index(keys.map((k) => ({ s3Key: `emails/${k}.eml`, cacheKey: k })))
+        store.setEmailMetas(keys.map(makeMeta))
+        return store
+    }
+
+    it('reports none when no emails are selected', async () => {
+        setupStore(['a', 'b', 'c'])
+        const wrapper = mount(EmailList, {
+            global: { stubs: { Filters: true, EmailAddress: true } },
+        })
+        await flushPromises()
+
+        const selectAll = wrapper.find('thead input[type="checkbox"]') as ReturnType<
+            typeof wrapper.find
+        >
+        expect((selectAll.element as HTMLInputElement).checked).toBe(false)
+        expect((selectAll.element as HTMLInputElement).indeterminate).toBe(false)
+    })
+
+    it('reports all when every page email is selected', async () => {
+        setupStore(['a', 'b'])
+        const wrapper = mount(EmailList, {
+            global: { stubs: { Filters: true, EmailAddress: true } },
+        })
+        await flushPromises()
+
+        await wrapper.find('thead input[type="checkbox"]').trigger('change')
+        await nextTick()
+
+        const selectAll = wrapper.find('thead input[type="checkbox"]')
+        expect((selectAll.element as HTMLInputElement).checked).toBe(true)
+        expect((selectAll.element as HTMLInputElement).indeterminate).toBe(false)
+    })
+
+    it('reports some when only a subset of page emails are selected', async () => {
+        setupStore(['a', 'b', 'c'])
+        const wrapper = mount(EmailList, {
+            global: { stubs: { Filters: true, EmailAddress: true } },
+        })
+        await flushPromises()
+
+        const rowCheckboxes = wrapper.findAll('tbody tr td input[type="checkbox"]')
+        await rowCheckboxes[0].trigger('change')
+        await nextTick()
+
+        const selectAll = wrapper.find('thead input[type="checkbox"]')
+        expect((selectAll.element as HTMLInputElement).checked).toBe(false)
+        expect((selectAll.element as HTMLInputElement).indeterminate).toBe(true)
+    })
+})
+
 describe('EmailList discoverability hint', () => {
     it('renders the keyboard shortcuts hint button', async () => {
         const wrapper = mount(EmailList, {
