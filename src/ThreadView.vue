@@ -21,9 +21,10 @@
             <h2 class="text-xl font-bold">{{ subject }}</h2>
         </div>
 
-        <div v-if="threadEmails.length === 0" class="text-neutral-500">
-            Thread not found or no emails loaded yet.
+        <div v-if="loading && threadEmails.length === 0" class="text-neutral-500">
+            Loading emails…
         </div>
+        <div v-else-if="threadEmails.length === 0" class="text-neutral-500">Thread not found.</div>
         <template v-else>
             <div
                 v-for="meta in threadEmails"
@@ -42,6 +43,7 @@ import { useRouter } from 'vue-router'
 import { useEmailStore } from './stores/email.js'
 import { groupIntoThreads } from './threads.js'
 import { useKeyboardShortcutsModal } from './useKeyboardShortcutsModal.js'
+import { useInboxLoader } from './useInboxLoader.js'
 import ThreadEmailCard from './ThreadEmailCard.vue'
 import type { EmailMeta } from './parser.js'
 
@@ -54,6 +56,7 @@ const props = defineProps<Props>()
 const router = useRouter()
 const emailStore = useEmailStore()
 const { showShortcutsModal } = useKeyboardShortcutsModal()
+const { loading, loadEmails } = useInboxLoader()
 
 const threadEmails = computed<EmailMeta[]>(() => {
     const allMetas = Array.from(emailStore.emailMeta.values())
@@ -80,6 +83,7 @@ function handleKeyDown(e: KeyboardEvent) {
 }
 
 onMounted(() => {
+    loadEmails()
     window.addEventListener('keydown', handleKeyDown)
 })
 

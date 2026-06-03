@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { ref } from 'vue'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import ThreadView from './ThreadView.vue'
@@ -19,8 +20,15 @@ vi.mock('./cache.js', () => ({
     markAsRead: vi.fn().mockResolvedValue(undefined),
 }))
 
-vi.mock('./useEmailLoader.js', () => ({
-    useEmailLoader: vi.fn(() => ({ email: { value: undefined }, error: { value: null } })),
+const mockLoadEmails = vi.fn().mockResolvedValue(undefined)
+const mockLoading = ref(false)
+
+vi.mock('./useInboxLoader.js', () => ({
+    useInboxLoader: vi.fn(() => ({
+        loading: mockLoading,
+        error: ref(null),
+        loadEmails: mockLoadEmails,
+    })),
 }))
 
 function makeMeta(overrides: Partial<EmailMeta> & { key: string }): EmailMeta {
@@ -35,6 +43,8 @@ function makeMeta(overrides: Partial<EmailMeta> & { key: string }): EmailMeta {
 beforeEach(() => {
     setActivePinia(createPinia())
     mockRouterBack.mockClear()
+    mockLoadEmails.mockClear()
+    mockLoading.value = false
 })
 
 describe('ThreadView', () => {
@@ -81,6 +91,28 @@ describe('ThreadView', () => {
         await flushPromises()
 
         expect(wrapper.text()).toContain('My thread')
+    })
+
+    it('calls loadEmails on mount', async () => {
+        const wrapper = mount(ThreadView, {
+            props: { threadId: 'nonexistent' },
+            global: { stubs: { ThreadEmailCard: true } },
+        })
+        await flushPromises()
+        expect(mockLoadEmails).toHaveBeenCalled()
+        wrapper.unmount()
+    })
+
+    it('shows loading message while emails are loading and thread is not yet found', async () => {
+        mockLoading.value = true
+        const wrapper = mount(ThreadView, {
+            props: { threadId: 'nonexistent' },
+            global: { stubs: { ThreadEmailCard: true } },
+        })
+        await flushPromises()
+        expect(wrapper.text()).toContain('Loading emails')
+        expect(wrapper.text()).not.toContain('Thread not found')
+        wrapper.unmount()
     })
 
     it('pressing Escape navigates back', async () => {
