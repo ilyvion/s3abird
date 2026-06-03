@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keyboard navigation in thread mode now uses the thread row count as its bound and routes `Enter` to `openThread()` instead of always calling `openEmail()`.
 - On-demand stale-cache eviction in `getCachedEmail` now also deletes the corresponding `email-meta` entry, consistent with the background `evictStaleEntries` sweep.
 - `emailStore.markRead()` is now awaited at both call sites in `useEmailLoader`, so IndexedDB persistence errors are no longer silently swallowed.
+- `groupIntoThreads` now pre-computes a timestamp map before sorting, eliminating repeated `new Date()` construction inside sort comparators; the post-sort `reduce` to find the latest email is replaced with a direct last-element access.
 
 ## [0.3.0] - 2026-06-01
 

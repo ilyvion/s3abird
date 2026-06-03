@@ -4,6 +4,7 @@ export interface ThreadGroup {
     threadId: string
     emails: EmailMeta[]
     latest: EmailMeta
+    latestTimestamp: number
     count: number
 }
 
@@ -63,36 +64,31 @@ export function groupIntoThreads(metas: EmailMeta[]): ThreadGroup[] {
         groups.get(root)!.push(meta)
     }
 
+    // Pre-compute timestamps once to avoid repeated new Date() in sort comparators
+    const emailTimestamps = new Map<string, number>()
+    for (const meta of metas) {
+        emailTimestamps.set(meta.key, meta.date ? new Date(meta.date).getTime() : 0)
+    }
+
     // Build ThreadGroup list
     const result: ThreadGroup[] = []
     for (const [root, emails] of groups) {
         // Sort oldest-first within thread
-        emails.sort((a, b) => {
-            const da = a.date ? new Date(a.date).getTime() : 0
-            const db = b.date ? new Date(b.date).getTime() : 0
-            return da - db
-        })
+        emails.sort((a, b) => (emailTimestamps.get(a.key) ?? 0) - (emailTimestamps.get(b.key) ?? 0))
 
-        // Find the most recently dated email
-        const latest = emails.reduce((newest, email) => {
-            const dn = newest.date ? new Date(newest.date).getTime() : 0
-            const de = email.date ? new Date(email.date).getTime() : 0
-            return de > dn ? email : newest
-        })
+        // After oldest-first sort, the last element is the latest
+        const latest = emails[emails.length - 1]
+        const latestTimestamp = emailTimestamps.get(latest.key) ?? 0
 
         // threadId is root email's messageId, or the root key if unknown
         const rootMeta = metas.find((m) => m.key === root)
         const threadId = rootMeta?.messageId ?? root
 
-        result.push({ threadId, emails, latest, count: emails.length })
+        result.push({ threadId, emails, latest, latestTimestamp, count: emails.length })
     }
 
     // Sort threads by latest date descending
-    result.sort((a, b) => {
-        const da = a.latest.date ? new Date(a.latest.date).getTime() : 0
-        const db = b.latest.date ? new Date(b.latest.date).getTime() : 0
-        return db - da
-    })
+    result.sort((a, b) => b.latestTimestamp - a.latestTimestamp)
 
     return result
 }
