@@ -44,6 +44,13 @@
                         <td>Previous page</td>
                     </tr>
                     <tr>
+                        <td>
+                            <kbd class="kbd kbd-sm">x</kbd> /
+                            <kbd class="kbd kbd-sm">Space</kbd>
+                        </td>
+                        <td>Toggle selection of highlighted email</td>
+                    </tr>
+                    <tr>
                         <td><kbd class="kbd kbd-sm">?</kbd></td>
                         <td>Show this help</td>
                     </tr>

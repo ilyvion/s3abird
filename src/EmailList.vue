@@ -1,36 +1,38 @@
 <template>
     <div>
-        <div class="mb-1 flex items-center gap-2">
-            <h2 class="text-2xl font-semibold">Inbox</h2>
-            <button
-                class="btn btn-ghost btn-sm"
-                :class="{ 'animate-spin': loading }"
-                :disabled="loading"
-                aria-label="Refresh inbox"
-                title="Refresh inbox"
-                @click="loadEmails(true)"
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+        <div class="mb-1 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div class="flex">
+                <h2 class="text-2xl font-semibold">Inbox</h2>
+                <button
+                    class="btn btn-ghost btn-sm"
+                    :class="{ 'animate-spin': loading }"
+                    :disabled="loading"
+                    aria-label="Refresh inbox"
+                    title="Refresh inbox"
+                    @click="loadEmails(true)"
                 >
-                    <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-                    <path d="M21 3v5h-5" />
-                </svg>
-            </button>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                        <path d="M21 3v5h-5" />
+                    </svg>
+                </button>
+            </div>
             <label class="label cursor-pointer gap-2">
                 <span class="text-sm">Group by thread</span>
                 <input v-model="groupThreads" type="checkbox" class="toggle toggle-sm" />
             </label>
             <button
-                class="btn btn-ghost btn-sm ml-auto text-sm text-neutral-400"
+                class="btn btn-ghost btn-sm mr-auto text-sm text-neutral-400 sm:mr-0 sm:ml-auto"
                 @click="openModal"
             >
                 Press <kbd class="kbd kbd-xs">?</kbd> for keyboard shortcuts
@@ -38,6 +40,24 @@
         </div>
 
         <Filters class="mb-3" />
+
+        <div class="alert mb-2 flex items-center gap-2">
+            <span>{{ selectedKeys.size }} selected</span>
+            <button
+                v-if="selectedKeys.size > 0"
+                class="btn btn-sm btn-primary"
+                @click="markSelectedRead"
+            >
+                Mark as read
+            </button>
+            <button
+                v-if="selectedKeys.size > 0"
+                class="btn btn-sm btn-ghost ml-auto"
+                @click="clearSelection"
+            >
+                Clear selection
+            </button>
+        </div>
 
         <div v-if="error" class="alert alert-error text-error-content font-semibold">
             Error: {{ error }}
@@ -66,6 +86,15 @@
         <table v-if="pagedMeta && pagedMeta.length > 0" class="block md:table">
             <thead class="hidden md:table-header-group">
                 <tr>
+                    <th>
+                        <input
+                            ref="selectAllRef"
+                            type="checkbox"
+                            class="checkbox checkbox-sm"
+                            tabindex="-1"
+                            @change="toggleSelectAll"
+                        />
+                    </th>
                     <th>From</th>
                     <th>Subject</th>
                     <th>Date</th>
@@ -87,6 +116,15 @@
                         @focus="selectedIndex = index"
                         @keydown.enter.prevent="openEmail(meta)"
                     >
+                        <td class="block md:table-cell" @click.stop>
+                            <input
+                                type="checkbox"
+                                class="checkbox checkbox-sm"
+                                :checked="selectedKeys.has(meta.key)"
+                                tabindex="-1"
+                                @change="toggleSelection(meta.key)"
+                            />
+                        </td>
                         <td
                             class="block truncate max-md:font-semibold md:table-cell"
                             style="max-width: 300px"
@@ -133,6 +171,16 @@
                         @focus="selectedIndex = index"
                         @keydown.enter.prevent="openThread(thread)"
                     >
+                        <td class="block md:table-cell" @click.stop>
+                            <input
+                                v-indeterminate="threadSelectionState(thread) === 'some'"
+                                type="checkbox"
+                                class="checkbox checkbox-sm"
+                                :checked="threadSelectionState(thread) === 'all'"
+                                tabindex="-1"
+                                @change="toggleThreadSelection(thread)"
+                            />
+                        </td>
                         <td
                             class="block truncate max-md:font-semibold md:table-cell"
                             style="max-width: 300px"
@@ -200,6 +248,7 @@ import {
     onDeactivated,
     watch,
     nextTick,
+    type ObjectDirective,
 } from 'vue'
 import { useRouter } from 'vue-router'
 import {
@@ -225,8 +274,18 @@ import { useEmailStore } from './stores/email.js'
 import { useConfigStore } from './stores/config.js'
 import { getS3Client, filterAndSortByDate, getPage, totalPages, PAGE_SIZE } from './s3Utils.js'
 import { useKeyboardShortcutsModal } from './useKeyboardShortcutsModal.js'
+import { useThreeStateCheckbox } from './useThreeStateCheckbox.js'
 
 const CONCURRENCY_LIMIT = 10
+
+const vIndeterminate: ObjectDirective<HTMLInputElement, boolean> = {
+    mounted: (el, { value }) => {
+        el.indeterminate = value
+    },
+    updated: (el, { value }) => {
+        el.indeterminate = value
+    },
+}
 
 const emailStore = useEmailStore()
 const configStore = useConfigStore()
@@ -240,6 +299,8 @@ const currentPage = ref(1)
 const selectedIndex = ref(0)
 const groupThreads = ref(false)
 const rowRefs: (HTMLElement | null)[] = []
+const selectedKeys = ref<Set<string>>(new Set())
+const selectAllRef = ref<HTMLInputElement | null>(null)
 
 function groupThreadsKey(bucket: EffectiveBucketConfig): string {
     return `groupThreads:${bucketFilterId(bucket)}`
@@ -283,12 +344,43 @@ const pagedThreads = computed<ThreadGroup[]>(() =>
     getPage(allThreads.value, currentPage.value, PAGE_SIZE)
 )
 
+type SelectionState = 'all' | 'some' | 'none'
+
+const pageEmailKeys = computed<string[]>(() => {
+    if (groupThreads.value) {
+        return pagedThreads.value.flatMap((t) => t.emails.map((e) => e.key))
+    }
+    return pagedMeta.value.map((m) => m.key)
+})
+
+const selectionState = computed<SelectionState>(() => {
+    const keys = pageEmailKeys.value
+    if (keys.length === 0) return 'none'
+    const selectedOnPage = keys.filter((k) => selectedKeys.value.has(k)).length
+    if (selectedOnPage === 0) return 'none'
+    if (selectedOnPage === keys.length) return 'all'
+    return 'some'
+})
+
+useThreeStateCheckbox(selectAllRef, selectionState, {
+    isChecked: (s) => s === 'all',
+    isIndeterminate: (s) => s === 'some',
+})
+
+// Re-sync checkbox visual state when element is re-mounted (e.g. toggling thread mode)
+watch(selectAllRef, (checkbox) => {
+    if (!checkbox) return
+    checkbox.checked = selectionState.value === 'all'
+    checkbox.indeterminate = selectionState.value === 'some'
+})
+
 watch(filteredIndex, () => {
     currentPage.value = 1
 })
 
 watch(pagedMeta, () => {
     selectedIndex.value = 0
+    selectedKeys.value = new Set()
 })
 
 watch(selectedIndex, async (index) => {
@@ -305,6 +397,9 @@ function isInputFocused(): boolean {
     return (
         el instanceof HTMLInputElement ||
         el instanceof HTMLTextAreaElement ||
+        el instanceof HTMLButtonElement ||
+        el instanceof HTMLSelectElement ||
+        el instanceof HTMLAnchorElement ||
         (el instanceof HTMLElement && el.isContentEditable)
     )
 }
@@ -329,6 +424,15 @@ function handleKeyDown(e: KeyboardEvent) {
         if (currentPage.value < numPages.value) currentPage.value++
     } else if (e.key === '[' || e.key === 'ArrowLeft') {
         if (currentPage.value > 1) currentPage.value--
+    } else if (e.key === 'x' || e.key === ' ') {
+        e.preventDefault()
+        if (groupThreads.value) {
+            const thread = pagedThreads.value[selectedIndex.value]
+            if (thread) toggleThreadSelection(thread)
+        } else {
+            const meta = pagedMeta.value[selectedIndex.value]
+            if (meta) toggleSelection(meta.key)
+        }
     }
 }
 
@@ -343,6 +447,54 @@ function openThread(thread: ThreadGroup) {
     } else {
         router.push({ path: `/inbox/thread/${encodeURIComponent(thread.threadId)}` })
     }
+}
+
+function toggleSelectAll() {
+    if (selectionState.value === 'all') {
+        selectedKeys.value = new Set()
+    } else {
+        selectedKeys.value = new Set(pageEmailKeys.value)
+    }
+}
+
+function threadSelectionState(thread: ThreadGroup): SelectionState {
+    const keys = thread.emails.map((e) => e.key)
+    const count = keys.filter((k) => selectedKeys.value.has(k)).length
+    if (count === 0) return 'none'
+    if (count === keys.length) return 'all'
+    return 'some'
+}
+
+function toggleThreadSelection(thread: ThreadGroup) {
+    const keys = thread.emails.map((e) => e.key)
+    const next = new Set(selectedKeys.value)
+    if (threadSelectionState(thread) === 'all') {
+        keys.forEach((k) => next.delete(k))
+    } else {
+        keys.forEach((k) => next.add(k))
+    }
+    selectedKeys.value = next
+}
+
+function toggleSelection(key: string) {
+    const next = new Set(selectedKeys.value)
+    if (next.has(key)) {
+        next.delete(key)
+    } else {
+        next.add(key)
+    }
+    selectedKeys.value = next
+}
+
+function clearSelection() {
+    selectedKeys.value = new Set()
+}
+
+async function markSelectedRead() {
+    for (const key of selectedKeys.value) {
+        await emailStore.markRead(key)
+    }
+    selectedKeys.value = new Set()
 }
 
 async function listAllObjects(

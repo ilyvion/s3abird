@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { nextTick } from 'vue'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import EmailList from './EmailList.vue'
@@ -281,6 +282,229 @@ describe('EmailList keyboard navigation', () => {
         const rows = wrapper.findAll('tbody tr')
         expect(rows[0].classes()).toContain('active')
         expect(rows[1].classes()).not.toContain('active')
+    })
+})
+
+describe('EmailList multi-select', () => {
+    function setupStore(keys: string[]) {
+        const store = useEmailStore()
+        store.setS3Index(keys.map((k) => ({ s3Key: `emails/${k}.eml`, cacheKey: k })))
+        store.setEmailMetas(keys.map(makeMeta))
+        return store
+    }
+
+    it('clicking the select-all checkbox selects all emails on the page', async () => {
+        setupStore(['a', 'b', 'c'])
+        const wrapper = mount(EmailList, {
+            global: { stubs: { Filters: true, EmailAddress: true } },
+        })
+        await flushPromises()
+
+        const selectAll = wrapper.find('thead input[type="checkbox"]')
+        await selectAll.trigger('change')
+        await nextTick()
+
+        const rowCheckboxes = wrapper.findAll('tbody tr td input[type="checkbox"]')
+        expect(rowCheckboxes).toHaveLength(3)
+        expect((rowCheckboxes[0].element as HTMLInputElement).checked).toBe(true)
+        expect((rowCheckboxes[1].element as HTMLInputElement).checked).toBe(true)
+        expect((rowCheckboxes[2].element as HTMLInputElement).checked).toBe(true)
+    })
+
+    it('clicking select-all when all are selected clears the selection', async () => {
+        setupStore(['a', 'b'])
+        const wrapper = mount(EmailList, {
+            global: { stubs: { Filters: true, EmailAddress: true } },
+        })
+        await flushPromises()
+
+        const selectAll = wrapper.find('thead input[type="checkbox"]')
+        await selectAll.trigger('change') // select all
+        await nextTick()
+        await selectAll.trigger('change') // deselect all
+        await nextTick()
+
+        const rowCheckboxes = wrapper.findAll('tbody tr td input[type="checkbox"]')
+        expect((rowCheckboxes[0].element as HTMLInputElement).checked).toBe(false)
+        expect((rowCheckboxes[1].element as HTMLInputElement).checked).toBe(false)
+    })
+
+    it('clicking an individual row checkbox adds it to the selection', async () => {
+        setupStore(['a', 'b'])
+        const wrapper = mount(EmailList, {
+            global: { stubs: { Filters: true, EmailAddress: true } },
+        })
+        await flushPromises()
+
+        const rowCheckboxes = wrapper.findAll('tbody tr td input[type="checkbox"]')
+        await rowCheckboxes[0].trigger('change')
+        await nextTick()
+
+        expect((rowCheckboxes[0].element as HTMLInputElement).checked).toBe(true)
+        expect((rowCheckboxes[1].element as HTMLInputElement).checked).toBe(false)
+    })
+
+    it('clicking a checked row checkbox removes it from the selection', async () => {
+        setupStore(['a', 'b'])
+        const wrapper = mount(EmailList, {
+            global: { stubs: { Filters: true, EmailAddress: true } },
+        })
+        await flushPromises()
+
+        const rowCheckboxes = wrapper.findAll('tbody tr td input[type="checkbox"]')
+        await rowCheckboxes[0].trigger('change') // add
+        await nextTick()
+        await rowCheckboxes[0].trigger('change') // remove
+        await nextTick()
+
+        expect((rowCheckboxes[0].element as HTMLInputElement).checked).toBe(false)
+    })
+
+    it('Mark as read calls markRead for each selected key and clears the selection', async () => {
+        const store = setupStore(['a', 'b'])
+        const markReadSpy = vi.spyOn(store, 'markRead').mockResolvedValue()
+
+        const wrapper = mount(EmailList, {
+            global: { stubs: { Filters: true, EmailAddress: true } },
+        })
+        await flushPromises()
+
+        await wrapper.find('thead input[type="checkbox"]').trigger('change')
+        await nextTick()
+
+        await wrapper.find('.alert .btn-primary').trigger('click')
+        await flushPromises()
+
+        expect(markReadSpy).toHaveBeenCalledWith('a')
+        expect(markReadSpy).toHaveBeenCalledWith('b')
+
+        const rowCheckboxes = wrapper.findAll('tbody tr td input[type="checkbox"]')
+        expect((rowCheckboxes[0].element as HTMLInputElement).checked).toBe(false)
+        expect((rowCheckboxes[1].element as HTMLInputElement).checked).toBe(false)
+    })
+
+    it('clicking a row (not a checkbox) does not modify the selection', async () => {
+        const store = setupStore(['a', 'b'])
+        vi.spyOn(store, 'markRead').mockResolvedValue()
+
+        const wrapper = mount(EmailList, {
+            global: { stubs: { Filters: true, EmailAddress: true } },
+        })
+        await flushPromises()
+
+        await wrapper.find('tbody tr').trigger('click')
+        await nextTick()
+
+        const rowCheckboxes = wrapper.findAll('tbody tr td input[type="checkbox"]')
+        expect((rowCheckboxes[0].element as HTMLInputElement).checked).toBe(false)
+        expect((rowCheckboxes[1].element as HTMLInputElement).checked).toBe(false)
+    })
+
+    it('pressing Space when a button is focused does not toggle selection', async () => {
+        setupStore(['a', 'b'])
+        const wrapper = mount(EmailList, {
+            global: { stubs: { Filters: true, EmailAddress: true } },
+        })
+        await flushPromises()
+
+        const button = document.createElement('button')
+        document.body.appendChild(button)
+        button.focus()
+
+        fireKeydown(' ')
+        await flushPromises()
+
+        const rowCheckboxes = wrapper.findAll('tbody tr td input[type="checkbox"]')
+        expect((rowCheckboxes[0].element as HTMLInputElement).checked).toBe(false)
+
+        button.remove()
+    })
+})
+
+describe('EmailList multi-select thread mode', () => {
+    function setupThreadStore() {
+        const store = useEmailStore()
+        const metaA: EmailMeta = {
+            key: 'a',
+            textPreview: 'preview',
+            formattedDate: '2026-01-01',
+            messageId: '<msg-a>',
+        }
+        const metaB: EmailMeta = {
+            key: 'b',
+            textPreview: 'preview',
+            formattedDate: '2026-01-02',
+            inReplyTo: '<msg-a>',
+        }
+        store.setS3Index([
+            { s3Key: 'emails/a.eml', cacheKey: 'a' },
+            { s3Key: 'emails/b.eml', cacheKey: 'b' },
+        ])
+        store.setEmailMetas([metaA, metaB])
+        return store
+    }
+
+    async function enableThreadMode(wrapper: ReturnType<typeof mount>) {
+        const toggle = wrapper.find('input.toggle')
+        ;(toggle.element as HTMLInputElement).checked = true
+        await toggle.trigger('change')
+        await flushPromises()
+    }
+
+    it('selecting a thread checkbox selects all emails in that thread', async () => {
+        setupThreadStore()
+        const wrapper = mount(EmailList, {
+            global: { stubs: { Filters: true, EmailAddress: true } },
+        })
+        await flushPromises()
+        await enableThreadMode(wrapper)
+
+        const rowCheckboxes = wrapper.findAll('tbody tr td input[type="checkbox"]')
+        expect(rowCheckboxes).toHaveLength(1)
+
+        await rowCheckboxes[0].trigger('change')
+        await flushPromises()
+
+        // Both emails in the thread are now selected → Mark as read becomes visible
+        const markReadBtn = wrapper.find('.alert .btn-primary')
+        expect(markReadBtn.exists()).toBe(true)
+    })
+
+    it('Mark as read in thread mode calls markRead for all emails in the thread', async () => {
+        const store = setupThreadStore()
+        const markReadSpy = vi.spyOn(store, 'markRead').mockResolvedValue()
+
+        const wrapper = mount(EmailList, {
+            global: { stubs: { Filters: true, EmailAddress: true } },
+        })
+        await flushPromises()
+        await enableThreadMode(wrapper)
+
+        await wrapper.find('tbody tr td input[type="checkbox"]').trigger('change')
+        await flushPromises()
+
+        await wrapper.find('.alert .btn-primary').trigger('click')
+        await flushPromises()
+
+        expect(markReadSpy).toHaveBeenCalledWith('a')
+        expect(markReadSpy).toHaveBeenCalledWith('b')
+    })
+
+    it('deselecting a thread removes all its emails from the selection', async () => {
+        setupThreadStore()
+        const wrapper = mount(EmailList, {
+            global: { stubs: { Filters: true, EmailAddress: true } },
+        })
+        await flushPromises()
+        await enableThreadMode(wrapper)
+
+        const rowCheckbox = wrapper.find('tbody tr td input[type="checkbox"]')
+        await rowCheckbox.trigger('change') // select
+        await flushPromises()
+        await rowCheckbox.trigger('change') // deselect
+        await flushPromises()
+
+        expect(wrapper.find('.alert .btn-primary').exists()).toBe(false)
     })
 })
 
