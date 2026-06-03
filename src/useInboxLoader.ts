@@ -68,8 +68,10 @@ export function useInboxLoader() {
 
         const s3 = getS3Client(aws_region, aws_access_key_id, aws_secret_access_key)
 
-        await evictStaleEntries()
-        const sorted = filterAndSortByDate(await listAllObjects(s3, bucket, prefix))
+        const [sorted] = await Promise.all([
+            listAllObjects(s3, bucket, prefix).then(filterAndSortByDate),
+            evictStaleEntries(),
+        ])
 
         const s3Index = sorted
             .filter((item) => !!item.Key)

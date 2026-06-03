@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - S3Client instances are now reused across loads via a module-level cache keyed by `region:accessKeyId`; the cache is cleared alongside the email cache on config change.
 - Filter expressions now match case-insensitively for `to`, `from`, and `subject` fields.
 - `ThreadView` now reads thread membership from a shared `threads` store getter instead of calling `groupIntoThreads` over the full inbox on every reactive update, eliminating redundant re-grouping during inbox load.
+- `evictStaleEntries` and S3 object listing now run concurrently in `useInboxLoader`, removing the IndexedDB scan from the inbox load critical path.
 
 ### Fixed
 
