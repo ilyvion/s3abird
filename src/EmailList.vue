@@ -319,6 +319,7 @@ const pagedMeta = computed<EmailMeta[]>(() => {
         .filter((m): m is EmailMeta => m !== undefined)
 })
 const allThreads = computed<ThreadGroup[]>(() => {
+    if (!groupThreads.value) return []
     const allMetas = filteredIndex.value
         .map(({ cacheKey }) => emailStore.emailMeta.get(cacheKey))
         .filter((m): m is EmailMeta => m !== undefined)

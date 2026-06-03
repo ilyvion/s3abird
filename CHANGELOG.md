@@ -58,6 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `emailStore.markRead()` is now awaited at both call sites in `useEmailLoader`, so IndexedDB persistence errors are no longer silently swallowed.
 - `groupIntoThreads` now pre-computes a timestamp map before sorting, eliminating repeated `new Date()` construction inside sort comparators; the post-sort `reduce` to find the latest email is replaced with a direct last-element access.
 - `groupIntoThreads` now looks up root email meta via a pre-built `keyToMeta` Map instead of a linear `metas.find()` scan, converting an O(n²) lookup to O(1) for large inboxes.
+- `allThreads` computed in `EmailList` now skips `groupIntoThreads` entirely when thread grouping is disabled, eliminating wasted CPU on every inbox-load event in flat-list mode.
 
 ## [0.3.0] - 2026-06-01
 
