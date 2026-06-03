@@ -27,7 +27,7 @@
             </div>
         </form>
         Filters:
-        <span v-if="labelList.length == 0" class="text-accent-content opacity-50">None</span>
+        <span v-if="labelList.length == 0" class="text-base-content/60">None</span>
         <span
             v-for="(labelEntry, index) in labelList"
             :key="'filter-' + index"
