@@ -25,6 +25,11 @@ describe('Subject filter', () => {
         const filter = Subject('hello')
         expect(filter.f(makeEmail({ subject: undefined }))).toBe(false)
     })
+
+    it('matches case-insensitively', () => {
+        const filter = Subject('HELLO')
+        expect(filter.f(makeEmail({ subject: 'say hello world' }))).toBe(true)
+    })
 })
 
 describe('To filter', () => {
@@ -37,6 +42,18 @@ describe('To filter', () => {
         const filter = To('alice')
         expect(filter.f(makeEmail({ to: undefined }))).toBe(false)
     })
+
+    it('matches case-insensitively on address', () => {
+        const filter = To('ALICE')
+        expect(filter.f(makeEmail({ to: [{ address: 'alice@example.com', name: '' }] }))).toBe(true)
+    })
+
+    it('matches case-insensitively on name', () => {
+        const filter = To('alice')
+        expect(
+            filter.f(makeEmail({ to: [{ address: 'other@example.com', name: 'Alice Smith' }] }))
+        ).toBe(true)
+    })
 })
 
 describe('From filter', () => {
@@ -48,6 +65,11 @@ describe('From filter', () => {
     it('does not match when from is undefined', () => {
         const filter = From('bob')
         expect(filter.f(makeEmail({ from: undefined }))).toBe(false)
+    })
+
+    it('matches case-insensitively', () => {
+        const filter = From('BOB')
+        expect(filter.f(makeEmail({ from: { address: 'bob@example.com', name: '' } }))).toBe(true)
     })
 })
 

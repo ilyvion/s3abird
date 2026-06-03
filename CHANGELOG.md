@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Label.f` now accepts a narrow `FilterableEmail` type instead of the full postal-mime `Email`
 - `clearEmailCache` and `evictStaleEntries` now atomically clean both the `emails` and `email-meta` IndexedDB stores
 - S3Client instances are now reused across loads via a module-level cache keyed by `region:accessKeyId`; the cache is cleared alongside the email cache on config change.
+- Filter expressions now match case-insensitively for `to`, `from`, and `subject` fields.
 
 ### Fixed
 

@@ -26,10 +26,11 @@ const From = (addr: string): Label => {
 }
 
 const Subject = (text: string): Label => {
+    const needle = text.toLowerCase()
     return {
         type: 'subject',
         value: text,
-        f: (e: FilterableEmail) => (e.subject?.indexOf(text) ?? -1) !== -1,
+        f: (e: FilterableEmail) => (e.subject?.toLowerCase().indexOf(needle) ?? -1) !== -1,
     }
 }
 
@@ -39,7 +40,7 @@ const parse = (s: string) => {
         return null
     }
 
-    let type = s.substring(0, i).trim()
+    let type = s.substring(0, i).trim().toLowerCase()
     let value = s.substring(i + 1).trim()
 
     switch (type) {
@@ -87,5 +88,9 @@ function deserialize(s: string): Label[] {
 export { To, From, Subject, parse, serialize, deserialize }
 
 function address_contains(address: Address, needle: string) {
-    return address.name.indexOf(needle) !== -1 || address.address?.indexOf(needle) !== -1
+    const n = needle.toLowerCase()
+    return (
+        address.name.toLowerCase().indexOf(n) !== -1 ||
+        address.address?.toLowerCase().indexOf(n) !== -1
+    )
 }

@@ -5,8 +5,22 @@
                 v-model="label"
                 class="input w-full"
                 type="text"
-                placeholder="type filter expressions, e.g. 'to: hello@example.com', 'from: hi@example.com' or 'subject: Important'"
+                placeholder="Type a filter expression…"
+                @focus="inputFocused = true"
+                @blur="inputFocused = false"
             />
+            <div
+                v-show="inputFocused"
+                class="rounded-box border-base-300 bg-base-200 text-base-content mt-1 border p-2 text-sm"
+            >
+                <p class="font-semibold">Filter expression examples:</p>
+                <ul class="mt-1 list-inside list-disc space-y-0.5">
+                    <li><code>to: hello@example.com</code></li>
+                    <li><code>from: hi@example.com</code></li>
+                    <li><code>subject: Important</code></li>
+                </ul>
+                <p class="mt-1 text-xs opacity-70">Press Enter to add the filter.</p>
+            </div>
         </form>
         Filters:
         <span v-if="labelList.length == 0" class="text-accent-content opacity-50">None</span>
@@ -36,6 +50,7 @@ import { useEmailStore } from './stores/email'
 const emailStore = useEmailStore()
 
 const label = ref('')
+const inputFocused = ref(false)
 
 const labelList = computed(() => emailStore.labels)
 
