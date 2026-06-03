@@ -7,14 +7,16 @@ import { useEmailStore } from './stores/email'
 
 const mockEvictStaleEntries = vi.fn()
 const mockS3Send = vi.fn()
+const mockSetCachedEmail = vi.fn()
+const mockSetEmailMeta = vi.fn()
 
 vi.mock('./cache.js', () => ({
     evictStaleEntries: (...args: unknown[]) => mockEvictStaleEntries(...args),
     getAllEmailMetas: vi.fn().mockResolvedValue([]),
     getReadKeys: vi.fn().mockResolvedValue(new Set<string>()),
     getCachedEmail: vi.fn().mockResolvedValue(undefined),
-    setCachedEmail: vi.fn().mockResolvedValue(undefined),
-    setEmailMeta: vi.fn().mockResolvedValue(undefined),
+    setCachedEmail: (...args: unknown[]) => mockSetCachedEmail(...args),
+    setEmailMeta: (...args: unknown[]) => mockSetEmailMeta(...args),
 }))
 
 vi.mock('./s3Utils.js', () => ({
@@ -51,8 +53,12 @@ beforeEach(() => {
     localStorage.setItem('config', VALID_CONFIG)
     mockEvictStaleEntries.mockReset()
     mockS3Send.mockReset()
+    mockSetCachedEmail.mockReset()
+    mockSetEmailMeta.mockReset()
     mockEvictStaleEntries.mockResolvedValue(undefined)
     mockS3Send.mockResolvedValue({ Contents: [], IsTruncated: false })
+    mockSetCachedEmail.mockResolvedValue(undefined)
+    mockSetEmailMeta.mockResolvedValue(undefined)
 })
 
 describe('useInboxLoader', () => {
@@ -111,6 +117,86 @@ describe('useInboxLoader', () => {
 
             expect(loading.value).toBe(false)
             expect(error.value).toBe('S3 unavailable')
+        })
+
+        it('writes setCachedEmail and setEmailMeta concurrently for each fetched email', async () => {
+            const order: string[] = []
+            let resolveCache!: () => void
+            let resolveMeta!: () => void
+
+            mockSetCachedEmail.mockReturnValue(
+                new Promise<void>((resolve) => {
+                    order.push('cache-started')
+                    resolveCache = resolve
+                })
+            )
+            mockSetEmailMeta.mockReturnValue(
+                new Promise<void>((resolve) => {
+                    order.push('meta-started')
+                    resolveMeta = resolve
+                })
+            )
+
+            mockS3Send.mockResolvedValueOnce({ Contents: [], IsTruncated: false })
+            mockS3Send.mockResolvedValueOnce({
+                Body: {
+                    transformToWebStream: () =>
+                        new ReadableStream({
+                            start(controller) {
+                                controller.enqueue(new Uint8Array())
+                                controller.close()
+                            },
+                        }),
+                },
+            })
+
+            const { default: parserMod } = await import('./parser.js')
+            vi.mocked(parserMod).mockResolvedValue({
+                subject: 'Test',
+                from: [],
+                to: [],
+                date: '',
+                html: '',
+                text: '',
+                textAsHtml: '',
+                attachments: [],
+                messageId: '',
+                inReplyTo: undefined,
+                references: [],
+                key: 'test-cache-key',
+            } as unknown as Awaited<ReturnType<typeof parserMod>>)
+
+            mockS3Send
+                .mockReset()
+                .mockResolvedValueOnce({
+                    Contents: [{ Key: 'emails/a.eml', LastModified: new Date() }],
+                    IsTruncated: false,
+                })
+                .mockResolvedValue({
+                    Body: {
+                        transformToWebStream: () =>
+                            new ReadableStream({
+                                start(controller) {
+                                    controller.enqueue(new Uint8Array())
+                                    controller.close()
+                                },
+                            }),
+                    },
+                })
+
+            const { loadEmails } = useInboxLoader()
+            const promise = loadEmails(true)
+
+            // Allow tasks to advance to the parallel write point
+            await flushPromises()
+
+            // Both writes must have started before either resolves
+            expect(order).toContain('cache-started')
+            expect(order).toContain('meta-started')
+
+            resolveCache()
+            resolveMeta()
+            await promise
         })
 
         it('skips loading when s3Index is already populated and force is false', async () => {

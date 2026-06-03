@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Filter expressions now match case-insensitively for `to`, `from`, and `subject` fields.
 - `ThreadView` now reads thread membership from a shared `threads` store getter instead of calling `groupIntoThreads` over the full inbox on every reactive update, eliminating redundant re-grouping during inbox load.
 - `evictStaleEntries` and S3 object listing now run concurrently in `useInboxLoader`, removing the IndexedDB scan from the inbox load critical path.
+- `setCachedEmail` and `setEmailMeta` IndexedDB writes now run concurrently per fetched email instead of sequentially.
 
 ### Fixed
 

@@ -96,8 +96,7 @@ export function useInboxLoader() {
             if (!body) throw new Error(`No body in response for ${s3Key}`)
             const parsed = await parser(body, cacheKey)
             const meta = extractMeta(parsed)
-            await setCachedEmail(cacheKey, parsed)
-            await setEmailMeta(cacheKey, meta)
+            await Promise.all([setCachedEmail(cacheKey, parsed), setEmailMeta(cacheKey, meta)])
             emailStore.addEmailMeta(applyFormattedDate(meta))
         })
 
