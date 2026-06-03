@@ -481,9 +481,7 @@ function clearSelection() {
 }
 
 async function markSelectedRead() {
-    for (const key of selectedKeys.value) {
-        await emailStore.markRead(key)
-    }
+    await Promise.all([...selectedKeys.value].map((key) => emailStore.markRead(key)))
     selectedKeys.value = new Set()
 }
 
