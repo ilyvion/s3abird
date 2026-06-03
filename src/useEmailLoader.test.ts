@@ -7,6 +7,8 @@ import { useEmailLoader } from './useEmailLoader'
 import { useEmailStore } from './stores/email'
 import { makeCacheKey } from './config'
 import type { ParsedEmail } from './parser'
+import { getS3Client } from './s3Utils'
+import type { S3Client } from '@aws-sdk/client-s3'
 
 const mockCachedEmail = {
     key: 'test-key',
@@ -77,6 +79,7 @@ beforeEach(() => {
     localStorage.clear()
     mockGetCachedEmail.mockReset()
     mockSetCachedEmail.mockReset()
+    vi.mocked(getS3Client).mockReset()
 })
 
 describe('useEmailLoader', () => {
@@ -122,6 +125,76 @@ describe('useEmailLoader', () => {
             await flushPromises()
 
             expect(wrapper.vm.error).toBe('Invalid email ID')
+        })
+    })
+
+    describe('unmount cancellation', () => {
+        it('skips setting email and calling markRead when unmounted during cache lookup', async () => {
+            localStorage.setItem('config', VALID_CONFIG)
+            const messageId = makeMessageId()
+
+            let resolveCache!: (v: ParsedEmail | null) => void
+            mockGetCachedEmail.mockReturnValue(
+                new Promise<ParsedEmail | null>((r) => {
+                    resolveCache = r
+                })
+            )
+
+            const wrapper = makeWrapper(messageId)
+            const store = useEmailStore()
+            const markReadSpy = vi.spyOn(store, 'markRead').mockResolvedValue()
+
+            wrapper.unmount()
+
+            resolveCache(mockCachedEmail)
+            await flushPromises()
+
+            expect(wrapper.vm.email).toBeUndefined()
+            expect(markReadSpy).not.toHaveBeenCalled()
+        })
+
+        it('passes abortSignal to s3.send', async () => {
+            localStorage.setItem('config', VALID_CONFIG)
+            const messageId = makeMessageId()
+            mockGetCachedEmail.mockResolvedValue(null)
+
+            const mockSend = vi.fn().mockReturnValue(new Promise(() => {}))
+            vi.mocked(getS3Client).mockReturnValue({ send: mockSend } as unknown as S3Client)
+
+            const wrapper = makeWrapper(messageId)
+            await flushPromises()
+
+            expect(mockSend).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({ abortSignal: expect.any(AbortSignal) })
+            )
+
+            wrapper.unmount()
+        })
+
+        it('does not set error when unmounted during S3 fetch', async () => {
+            localStorage.setItem('config', VALID_CONFIG)
+            const messageId = makeMessageId()
+            mockGetCachedEmail.mockResolvedValue(null)
+
+            let rejectSend!: (e: unknown) => void
+            const mockSend = vi.fn().mockReturnValue(
+                new Promise<never>((_, r) => {
+                    rejectSend = r
+                })
+            )
+            vi.mocked(getS3Client).mockReturnValue({ send: mockSend } as unknown as S3Client)
+
+            const wrapper = makeWrapper(messageId)
+            await flushPromises()
+
+            wrapper.unmount()
+
+            rejectSend(new DOMException('The operation was aborted', 'AbortError'))
+            await flushPromises()
+
+            expect(wrapper.vm.error).toBeNull()
+            expect(wrapper.vm.email).toBeUndefined()
         })
     })
 })

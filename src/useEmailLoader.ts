@@ -1,4 +1,4 @@
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 import parser, { type ParsedEmail } from './parser.js'
 import { validateEffectiveConfig, decodeCacheKey } from './config.js'
@@ -13,6 +13,9 @@ export function useEmailLoader(messageId: string) {
 
     const email = ref<ParsedEmail | undefined>()
     const error = ref<string | null>(null)
+
+    const ac = new AbortController()
+    onUnmounted(() => ac.abort())
 
     onMounted(async () => {
         if (configStore.allBuckets.length === 0) {
@@ -41,6 +44,7 @@ export function useEmailLoader(messageId: string) {
             result.validatedConfig
 
         const cached = await getCachedEmail(messageId)
+        if (ac.signal.aborted) return
         if (cached) {
             email.value = cached
             await emailStore.markRead(messageId)
@@ -50,17 +54,21 @@ export function useEmailLoader(messageId: string) {
         const s3 = getS3Client(aws_region, aws_access_key_id, aws_secret_access_key)
 
         try {
-            const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: info.s3Key }))
+            const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: info.s3Key }), {
+                abortSignal: ac.signal,
+            })
             const body: ReadableStream | undefined = res.Body?.transformToWebStream()
             if (!body) {
                 error.value = 'No body in response'
                 return
             }
             const parsed = await parser(body, messageId)
+            if (ac.signal.aborted) return
             await setCachedEmail(messageId, parsed)
             email.value = parsed
             await emailStore.markRead(messageId)
         } catch (err) {
+            if (ac.signal.aborted) return
             error.value = err instanceof Error ? err.message : 'Unknown error while loading email'
         }
     })

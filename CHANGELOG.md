@@ -62,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `groupIntoThreads` now pre-computes a timestamp map before sorting, eliminating repeated `new Date()` construction inside sort comparators; the post-sort `reduce` to find the latest email is replaced with a direct last-element access.
 - `groupIntoThreads` now looks up root email meta via a pre-built `keyToMeta` Map instead of a linear `metas.find()` scan, converting an O(n²) lookup to O(1) for large inboxes.
 - `allThreads` computed in `EmailList` now skips `groupIntoThreads` entirely when thread grouping is disabled, eliminating wasted CPU on every inbox-load event in flat-list mode.
+- `useEmailLoader` now cancels in-flight S3 fetches via `AbortController` on component unmount and guards all post-await state writes, preventing wasted bandwidth and stale reactive updates when navigating away from a thread.
 
 ## [0.3.0] - 2026-06-01
 
