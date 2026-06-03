@@ -1,6 +1,7 @@
 import { openDB } from 'idb'
 import type { ParsedEmail } from './parser'
 import type { EmailMeta } from './parser'
+import { decodeCacheKey } from './config'
 
 const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000
 
@@ -79,6 +80,26 @@ export async function getReadKeys(): Promise<Set<string>> {
     const db = await dbPromise
     const keys = await db.getAllKeys('read-status')
     return new Set(keys as string[])
+}
+
+export async function clearEmailCacheForBuckets(
+    buckets: Array<{ aws_region: string; bucket: string }>
+): Promise<void> {
+    if (buckets.length === 0) return
+    const targets = new Set(buckets.map((b) => `${b.aws_region}|${b.bucket}`))
+    const db = await dbPromise
+    const tx = db.transaction(['emails', 'email-meta', 'read-status'], 'readwrite')
+    for (const storeName of ['emails', 'email-meta', 'read-status'] as const) {
+        const store = tx.objectStore(storeName)
+        const keys = await store.getAllKeys()
+        for (const key of keys) {
+            const decoded = decodeCacheKey(key as string)
+            if (decoded && targets.has(`${decoded.aws_region}|${decoded.bucket}`)) {
+                await store.delete(key)
+            }
+        }
+    }
+    await tx.done
 }
 
 export async function clearEmailCache() {

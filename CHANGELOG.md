@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `EmailItem`: `headers` computed no longer mutates the shared Pinia store array in place; replaced `localeCompare` with a direct ASCII comparison for header key sorting.
 - `activeBucket` getter now reuses the cached `allBuckets` getter result instead of calling `flattenBuckets` a second time on every reactive evaluation.
 - fix(useEffectiveTheme): expose dispose() to remove MediaQueryList listener on unmount
+- Config changes now evict only the email cache and read/unread status for buckets that were removed or modified, instead of wiping all caches on any change. Labels and other non-data fields can be edited freely without affecting cached data.
 
 ## [0.3.0] - 2026-06-01
 

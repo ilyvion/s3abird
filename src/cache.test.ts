@@ -7,10 +7,13 @@ import {
     setEmailMeta,
     getAllEmailMetas,
     clearEmailCache,
+    clearEmailCacheForBuckets,
     evictStaleEntries,
     markAsRead,
     getReadKeys,
 } from './cache'
+import { makeCacheKey } from './config'
+import type { EffectiveBucketConfig } from './config'
 import type { ParsedEmail, EmailMeta } from './parser'
 
 const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000
@@ -199,6 +202,63 @@ describe('cache', () => {
             await markAsRead('key1')
             await clearEmailCache()
             expect(await getReadKeys()).toEqual(new Set())
+        })
+    })
+
+    describe('clearEmailCacheForBuckets', () => {
+        const bucketA: EffectiveBucketConfig = {
+            aws_region: 'us-east-1',
+            aws_access_key_id: 'AKID',
+            aws_secret_access_key: 'secret',
+            bucket: 'bucket-a',
+        }
+        const bucketB: EffectiveBucketConfig = {
+            aws_region: 'us-west-2',
+            aws_access_key_id: 'AKID',
+            aws_secret_access_key: 'secret',
+            bucket: 'bucket-b',
+        }
+
+        it('is a no-op when given an empty array', async () => {
+            await setCachedEmail(makeCacheKey(bucketA, 'msg1'), mockEmail)
+            await clearEmailCacheForBuckets([])
+            expect(await getCachedEmail(makeCacheKey(bucketA, 'msg1'))).toEqual(mockEmail)
+        })
+
+        it('removes emails and meta for matching bucket', async () => {
+            const key = makeCacheKey(bucketA, 'msg1')
+            await setCachedEmail(key, mockEmail)
+            await setEmailMeta(key, mockMeta)
+
+            await clearEmailCacheForBuckets([bucketA])
+
+            expect(await getCachedEmail(key)).toBeUndefined()
+            expect(await getAllEmailMetas()).toEqual([])
+        })
+
+        it('leaves emails for non-matching bucket untouched', async () => {
+            const keyA = makeCacheKey(bucketA, 'msg1')
+            const keyB = makeCacheKey(bucketB, 'msg1')
+            await setCachedEmail(keyA, mockEmail)
+            await setCachedEmail(keyB, mockEmail)
+
+            await clearEmailCacheForBuckets([bucketA])
+
+            expect(await getCachedEmail(keyA)).toBeUndefined()
+            expect(await getCachedEmail(keyB)).toEqual(mockEmail)
+        })
+
+        it('removes read-status entries for matching bucket', async () => {
+            const keyA = makeCacheKey(bucketA, 'msg1')
+            const keyB = makeCacheKey(bucketB, 'msg1')
+            await markAsRead(keyA)
+            await markAsRead(keyB)
+
+            await clearEmailCacheForBuckets([bucketA])
+
+            const remaining = await getReadKeys()
+            expect(remaining).not.toContain(keyA)
+            expect(remaining).toContain(keyB)
         })
     })
 })

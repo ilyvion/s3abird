@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import type { AwsConfig, EffectiveBucketConfig } from '../config'
 import { migrateLegacyConfig, flattenBuckets } from '../config'
-import { clearEmailCache } from '../cache'
+import { clearEmailCacheForBuckets } from '../cache'
 import { clearS3ClientCache } from '../s3Utils'
 
 function safeParseJson(s: string | undefined): unknown {
@@ -35,14 +35,38 @@ export const useConfigStore = defineStore('config', {
             this.config = newConfig
             localStorage.config = JSON.stringify(newConfig)
 
-            const newTotal = flattenBuckets(newConfig).length
-            if (this.activeBucketIndex >= newTotal) {
-                this.activeBucketIndex = Math.max(0, newTotal - 1)
+            const newBuckets = flattenBuckets(newConfig)
+            if (this.activeBucketIndex >= newBuckets.length) {
+                this.activeBucketIndex = Math.max(0, newBuckets.length - 1)
                 localStorage.activeBucketIndex = String(this.activeBucketIndex)
             }
 
-            if (JSON.stringify(oldConfig) !== JSON.stringify(newConfig)) {
-                clearEmailCache()
+            const oldBuckets = oldConfig ? flattenBuckets(oldConfig) : []
+            const newSigs = new Set(
+                newBuckets.map(
+                    (b) =>
+                        `${b.aws_region}|${b.bucket}|${b.prefix ?? ''}|${b.aws_access_key_id}|${b.aws_secret_access_key}`
+                )
+            )
+            const staleBuckets = oldBuckets.filter(
+                (b) =>
+                    !newSigs.has(
+                        `${b.aws_region}|${b.bucket}|${b.prefix ?? ''}|${b.aws_access_key_id}|${b.aws_secret_access_key}`
+                    )
+            )
+            if (staleBuckets.length > 0) {
+                void clearEmailCacheForBuckets(staleBuckets)
+            }
+
+            const newCredSigs = new Set(
+                newConfig.credentials.map(
+                    (c) => `${c.aws_access_key_id}|${c.aws_secret_access_key}`
+                )
+            )
+            const existingCredRemoved = (oldConfig?.credentials ?? []).some(
+                (c) => !newCredSigs.has(`${c.aws_access_key_id}|${c.aws_secret_access_key}`)
+            )
+            if (existingCredRemoved) {
                 clearS3ClientCache()
             }
         },
