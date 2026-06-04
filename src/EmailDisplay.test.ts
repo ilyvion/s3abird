@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import EmailDisplay from './EmailDisplay.vue'
 import type { ParsedEmail } from './parser.js'
@@ -100,5 +100,68 @@ describe('EmailDisplay', () => {
             global: { stubs },
         })
         expect(wrapper.text()).not.toContain('Attachments')
+    })
+
+    it('triggers a download when the Download button is clicked', async () => {
+        const createObjectURL = vi.fn().mockReturnValue('blob:test-url')
+        const revokeObjectURL = vi.fn()
+        URL.createObjectURL = createObjectURL
+        URL.revokeObjectURL = revokeObjectURL
+
+        const clickSpy = vi.fn()
+        const createElement = document.createElement.bind(document)
+        vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+            const el = createElement(tag)
+            if (tag === 'a') {
+                Object.defineProperty(el, 'click', { value: clickSpy, writable: true })
+            }
+            return el
+        })
+
+        const att = {
+            content: btoa('hello'),
+            mimeType: 'application/pdf',
+            filename: 'file.pdf',
+            disposition: 'attachment' as const,
+            encoding: 'base64' as const,
+        }
+        const wrapper = mount(EmailDisplay, {
+            props: { email: makeEmail({ attachments: [att] }) },
+            global: { stubs },
+        })
+
+        await wrapper.find('button').trigger('click')
+
+        expect(createObjectURL).toHaveBeenCalled()
+        expect(clickSpy).toHaveBeenCalled()
+        expect(revokeObjectURL).toHaveBeenCalledWith('blob:test-url')
+
+        vi.restoreAllMocks()
+    })
+})
+
+describe('EmailDisplay CC rendering', () => {
+    it('renders a comma separator between multiple CC addresses', () => {
+        const email = makeEmail({
+            cc: [
+                { name: 'Alice', address: 'alice@example.com' },
+                { name: 'Bob', address: 'bob@example.com' },
+            ],
+        })
+        const wrapper = mount(EmailDisplay, {
+            props: { email },
+            global: { stubs },
+        })
+        const ccSection = wrapper.find('li:nth-child(3)')
+        expect(ccSection.text()).toContain(',')
+    })
+
+    it('does not render the CC section when cc is empty', () => {
+        const email = makeEmail({ cc: [] })
+        const wrapper = mount(EmailDisplay, {
+            props: { email },
+            global: { stubs },
+        })
+        expect(wrapper.html()).not.toContain('CC:')
     })
 })

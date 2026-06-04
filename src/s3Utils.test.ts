@@ -1,5 +1,12 @@
-import { describe, it, expect } from 'vitest'
-import { filterAndSortByDate, getPage, totalPages, PAGE_SIZE } from './s3Utils'
+import { describe, it, expect, beforeEach } from 'vitest'
+import {
+    filterAndSortByDate,
+    getPage,
+    totalPages,
+    PAGE_SIZE,
+    getS3Client,
+    clearS3ClientCache,
+} from './s3Utils'
 import type { _Object } from '@aws-sdk/client-s3'
 
 describe('filterAndSortByDate', () => {
@@ -54,6 +61,45 @@ describe('getPage', () => {
 
     it('handles empty items', () => {
         expect(getPage([], 1, 25)).toEqual([])
+    })
+})
+
+describe('getS3Client', () => {
+    beforeEach(() => {
+        clearS3ClientCache()
+    })
+
+    it('returns an S3Client instance', () => {
+        const client = getS3Client('us-east-1', 'AKID', 'secret')
+        expect(client).toBeDefined()
+        expect(typeof client.send).toBe('function')
+    })
+
+    it('returns the same instance for the same region and access key', () => {
+        const a = getS3Client('us-east-1', 'AKID', 'secret')
+        const b = getS3Client('us-east-1', 'AKID', 'different-secret')
+        expect(a).toBe(b)
+    })
+
+    it('returns different instances for different access keys', () => {
+        const a = getS3Client('us-east-1', 'AKID1', 'secret')
+        const b = getS3Client('us-east-1', 'AKID2', 'secret')
+        expect(a).not.toBe(b)
+    })
+
+    it('returns different instances for different regions', () => {
+        const a = getS3Client('us-east-1', 'AKID', 'secret')
+        const b = getS3Client('eu-west-1', 'AKID', 'secret')
+        expect(a).not.toBe(b)
+    })
+})
+
+describe('clearS3ClientCache', () => {
+    it('forces a new client to be created after clearing', () => {
+        const before = getS3Client('us-east-1', 'AKID', 'secret')
+        clearS3ClientCache()
+        const after = getS3Client('us-east-1', 'AKID', 'secret')
+        expect(before).not.toBe(after)
     })
 })
 

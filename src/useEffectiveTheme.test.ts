@@ -94,4 +94,13 @@ describe('useEffectiveTheme', () => {
         useEffectiveTheme()
         expect(media.addEventListener).toHaveBeenCalledTimes(2)
     })
+
+    it('applyThemeToDocument sets the data-theme attribute on the document element', async () => {
+        mockMatchMedia(false)
+        vi.doMock('./stores/theme', () => ({ useThemeStore: () => ({ theme: 'light' }) }))
+        const { useEffectiveTheme } = await import('./useEffectiveTheme')
+        const { applyThemeToDocument } = useEffectiveTheme()
+        applyThemeToDocument()
+        expect(document.documentElement.getAttribute('data-theme')).toBe('latte')
+    })
 })

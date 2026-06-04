@@ -1,6 +1,11 @@
 // @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest'
-import parse, { extractMeta, applyFormattedDate, isInlineAttachment } from './parser'
+import parse, {
+    extractMeta,
+    applyFormattedDate,
+    isInlineAttachment,
+    attachmentToBase64,
+} from './parser'
 import type { Attachment } from 'postal-mime'
 
 const RAW_EMAIL_WITH_ANGLE_BRACKET_ADDRESS = `From: sender@example.com
@@ -347,5 +352,55 @@ Hello
         const parsed = await parse(raw, 'test-key')
         const meta = applyFormattedDate(extractMeta(parsed))
         expect(meta.formattedDate).toBe('')
+    })
+})
+
+describe('attachmentToBase64', () => {
+    it('returns content directly when encoding is base64 and content is a string', () => {
+        const att: Attachment = {
+            content: 'aGVsbG8=',
+            mimeType: 'text/plain',
+            filename: null,
+            disposition: 'attachment',
+            encoding: 'base64',
+        }
+        expect(attachmentToBase64(att)).toBe('aGVsbG8=')
+    })
+
+    it('throws when encoding is base64 but content is not a string', () => {
+        const att: Attachment = {
+            content: new Uint8Array([104, 101, 108, 108, 111]),
+            mimeType: 'text/plain',
+            filename: null,
+            disposition: 'attachment',
+            encoding: 'base64',
+        }
+        expect(() => attachmentToBase64(att)).toThrow(
+            'Base64-encoded attachment content must be a string'
+        )
+    })
+
+    it('encodes a utf8 string to base64 when encoding is not base64', () => {
+        const att: Attachment = {
+            content: 'hello',
+            mimeType: 'text/plain',
+            filename: null,
+            disposition: 'attachment',
+            encoding: undefined,
+        }
+        const result = attachmentToBase64(att)
+        expect(atob(result)).toBe('hello')
+    })
+
+    it('encodes binary Uint8Array content to base64', () => {
+        const att: Attachment = {
+            content: new Uint8Array([104, 101, 108, 108, 111]),
+            mimeType: 'application/octet-stream',
+            filename: null,
+            disposition: 'attachment',
+            encoding: undefined,
+        }
+        const result = attachmentToBase64(att)
+        expect(atob(result)).toBe('hello')
     })
 })

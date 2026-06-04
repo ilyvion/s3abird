@@ -126,6 +126,101 @@ describe('useEmailLoader', () => {
 
             expect(wrapper.vm.error).toBe('Invalid email ID')
         })
+
+        it('sets error when the message ID references a bucket not in config', async () => {
+            const otherBucketConfig = JSON.stringify({
+                credentials: [
+                    {
+                        aws_access_key_id: 'AKIAIOSFODNN7EXAMPLE',
+                        aws_secret_access_key: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+                        buckets: [{ aws_region: 'us-east-1', bucket: 'other-bucket' }],
+                    },
+                ],
+            })
+            localStorage.setItem('config', otherBucketConfig)
+            const messageId = makeMessageId()
+
+            const wrapper = makeWrapper(messageId)
+            await flushPromises()
+
+            expect(wrapper.vm.error).toBe('Bucket configuration not found')
+        })
+
+        it('sets error when S3 response has no body', async () => {
+            localStorage.setItem('config', VALID_CONFIG)
+            const messageId = makeMessageId()
+            mockGetCachedEmail.mockResolvedValue(null)
+
+            const mockSend = vi.fn().mockResolvedValue({ Body: undefined })
+            vi.mocked(getS3Client).mockReturnValue({ send: mockSend } as unknown as S3Client)
+
+            const wrapper = makeWrapper(messageId)
+            await flushPromises()
+
+            expect(wrapper.vm.error).toBe('No body in response')
+        })
+
+        it('sets error when S3 send throws a non-abort error', async () => {
+            localStorage.setItem('config', VALID_CONFIG)
+            const messageId = makeMessageId()
+            mockGetCachedEmail.mockResolvedValue(null)
+
+            const mockSend = vi.fn().mockRejectedValue(new Error('Network failure'))
+            vi.mocked(getS3Client).mockReturnValue({ send: mockSend } as unknown as S3Client)
+
+            const wrapper = makeWrapper(messageId)
+            await flushPromises()
+
+            expect(wrapper.vm.error).toBe('Network failure')
+        })
+
+        it('sets generic error message when S3 throws a non-Error', async () => {
+            localStorage.setItem('config', VALID_CONFIG)
+            const messageId = makeMessageId()
+            mockGetCachedEmail.mockResolvedValue(null)
+
+            const mockSend = vi.fn().mockRejectedValue('string error')
+            vi.mocked(getS3Client).mockReturnValue({ send: mockSend } as unknown as S3Client)
+
+            const wrapper = makeWrapper(messageId)
+            await flushPromises()
+
+            expect(wrapper.vm.error).toBe('Unknown error while loading email')
+        })
+    })
+
+    describe('successful S3 fetch path', () => {
+        it('sets email and marks read after a successful S3 fetch', async () => {
+            localStorage.setItem('config', VALID_CONFIG)
+            const messageId = makeMessageId()
+            mockGetCachedEmail.mockResolvedValue(null)
+            mockSetCachedEmail.mockResolvedValue(undefined)
+
+            const parsed = { key: messageId, subject: 'From S3' } as unknown as ParsedEmail
+            const { default: parserMod } = await import('./parser.js')
+            vi.mocked(parserMod).mockResolvedValue(parsed)
+
+            const stream = new ReadableStream({
+                start(controller) {
+                    controller.enqueue(new Uint8Array())
+                    controller.close()
+                },
+            })
+            const mockSend = vi.fn().mockResolvedValue({
+                Body: { transformToWebStream: () => stream },
+            })
+            vi.mocked(getS3Client).mockReturnValue({ send: mockSend } as unknown as S3Client)
+
+            const wrapper = makeWrapper(messageId)
+            const store = useEmailStore()
+            const markReadSpy = vi.spyOn(store, 'markRead').mockResolvedValue()
+
+            await flushPromises()
+
+            expect(wrapper.vm.email).toEqual(parsed)
+            expect(markReadSpy).toHaveBeenCalledWith(messageId)
+            expect(mockSetCachedEmail).toHaveBeenCalledWith(messageId, parsed)
+        })
     })
 
     describe('unmount cancellation', () => {

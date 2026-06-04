@@ -208,5 +208,60 @@ describe('useInboxLoader', () => {
 
             expect(mockS3Send).not.toHaveBeenCalled()
         })
+
+        it('sets loading to false and returns early when there is no active bucket', async () => {
+            localStorage.removeItem('config')
+            setActivePinia(createPinia())
+
+            const { loadEmails, loading } = useInboxLoader()
+            const promise = loadEmails(true)
+
+            expect(loading.value).toBe(false)
+            await promise
+
+            expect(mockS3Send).not.toHaveBeenCalled()
+        })
+
+        it('adds email meta from cache when a cached email is found during task processing', async () => {
+            const { applyFormattedDate, extractMeta } = await import('./parser.js')
+            const { getCachedEmail } = await import('./cache.js')
+
+            const cachedEmail = {
+                key: 'test-cache-key',
+                subject: 'Cached',
+                from: [],
+                to: [],
+                date: '',
+                html: '',
+                text: '',
+                textAsHtml: '',
+                attachments: [],
+                messageId: '',
+                inReplyTo: undefined,
+                references: [],
+            }
+
+            vi.mocked(getCachedEmail).mockResolvedValue(cachedEmail as never)
+            vi.mocked(extractMeta).mockReturnValue({
+                key: 'test-cache-key',
+                textPreview: '',
+                formattedDate: '',
+            })
+            vi.mocked(applyFormattedDate).mockImplementation((m) => m as never)
+
+            mockS3Send.mockReset().mockResolvedValueOnce({
+                Contents: [{ Key: 'emails/a.eml', LastModified: new Date() }],
+                IsTruncated: false,
+            })
+
+            const store = useEmailStore()
+            const addMetaSpy = vi.spyOn(store, 'addEmailMeta')
+
+            const { loadEmails } = useInboxLoader()
+            await loadEmails(true)
+            await flushPromises()
+
+            expect(addMetaSpy).toHaveBeenCalled()
+        })
     })
 })
