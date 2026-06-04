@@ -16,9 +16,18 @@
 
 <script lang="ts" setup>
 import { ref, watch, computed } from 'vue'
-import { marked } from 'marked'
+import { Marked } from 'marked'
 import { stripEmptyUnreleased } from './changelogUtils.js'
 import { loadChangelog } from './loadChangelog.js'
+
+const marked = new Marked({
+    renderer: {
+        link({ href, title, text }) {
+            const titleAttr = title ? ` title="${title}"` : ''
+            return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`
+        },
+    },
+})
 
 const props = defineProps<{
     modelValue: boolean
@@ -32,7 +41,7 @@ const dialogRef = ref<HTMLDialogElement | null>(null)
 const changelogRaw = ref<string | null>(null)
 
 const renderedChangelog = computed(() =>
-    changelogRaw.value !== null ? marked(stripEmptyUnreleased(changelogRaw.value)) : ''
+    changelogRaw.value !== null ? marked.parse(stripEmptyUnreleased(changelogRaw.value)) : ''
 )
 
 function close() {
