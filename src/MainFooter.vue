@@ -4,7 +4,7 @@
     >
         <div class="flex flex-col gap-2">
             <span
-                >Current version maintained with <i class="fas fa-heart" /> by
+                >v{{ version }} — Current version maintained with <i class="fas fa-heart" /> by
                 <a class="link" href="https://alexanderschroeder.net/"
                     >Alexander&nbsp;Krivács&nbsp;Schrøder</a
                 ></span
@@ -21,3 +21,7 @@
         </div>
     </footer>
 </template>
+
+<script setup lang="ts">
+import { version } from '../package.json'
+</script>
