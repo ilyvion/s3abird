@@ -19,7 +19,7 @@
 import { computed } from 'vue'
 import EmailAddress from './EmailAddress.vue'
 import EmailDisplay from './EmailDisplay.vue'
-import { useEmailLoader } from './useEmailLoader.js'
+import { useEmailLoader } from './composables/useEmailLoader.js'
 
 interface Props {
     messageId: string

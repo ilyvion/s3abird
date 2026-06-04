@@ -6,7 +6,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import EmailList from './EmailList.vue'
 import { useEmailStore } from './stores/email.js'
 import type { EmailMeta } from './parser.js'
-import { useKeyboardShortcutsModal } from './useKeyboardShortcutsModal.js'
+import { useKeyboardShortcutsModal } from './composables/useKeyboardShortcutsModal.js'
 
 const mockRouterPush = vi.fn()
 

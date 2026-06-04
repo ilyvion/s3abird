@@ -20,7 +20,7 @@ describe('useEffectiveTheme', () => {
 
     it('effectiveTheme returns light when system prefers light and theme is system', async () => {
         mockMatchMedia(false)
-        vi.doMock('./stores/theme', () => ({ useThemeStore: () => ({ theme: 'system' }) }))
+        vi.doMock('../stores/theme', () => ({ useThemeStore: () => ({ theme: 'system' }) }))
         const { useEffectiveTheme } = await import('./useEffectiveTheme')
         const { effectiveTheme } = useEffectiveTheme()
         expect(effectiveTheme.value).toBe('light')
@@ -28,7 +28,7 @@ describe('useEffectiveTheme', () => {
 
     it('effectiveTheme returns dark when system prefers dark and theme is system', async () => {
         mockMatchMedia(true)
-        vi.doMock('./stores/theme', () => ({ useThemeStore: () => ({ theme: 'system' }) }))
+        vi.doMock('../stores/theme', () => ({ useThemeStore: () => ({ theme: 'system' }) }))
         const { useEffectiveTheme } = await import('./useEffectiveTheme')
         const { effectiveTheme } = useEffectiveTheme()
         expect(effectiveTheme.value).toBe('dark')
@@ -36,7 +36,7 @@ describe('useEffectiveTheme', () => {
 
     it('effectiveTheme respects explicit light theme regardless of system preference', async () => {
         mockMatchMedia(true)
-        vi.doMock('./stores/theme', () => ({ useThemeStore: () => ({ theme: 'light' }) }))
+        vi.doMock('../stores/theme', () => ({ useThemeStore: () => ({ theme: 'light' }) }))
         const { useEffectiveTheme } = await import('./useEffectiveTheme')
         const { effectiveTheme } = useEffectiveTheme()
         expect(effectiveTheme.value).toBe('light')
@@ -44,7 +44,7 @@ describe('useEffectiveTheme', () => {
 
     it('effectiveTheme respects explicit dark theme regardless of system preference', async () => {
         mockMatchMedia(false)
-        vi.doMock('./stores/theme', () => ({ useThemeStore: () => ({ theme: 'dark' }) }))
+        vi.doMock('../stores/theme', () => ({ useThemeStore: () => ({ theme: 'dark' }) }))
         const { useEffectiveTheme } = await import('./useEffectiveTheme')
         const { effectiveTheme } = useEffectiveTheme()
         expect(effectiveTheme.value).toBe('dark')
@@ -52,7 +52,7 @@ describe('useEffectiveTheme', () => {
 
     it('effectiveThemeName returns latte for light theme', async () => {
         mockMatchMedia(false)
-        vi.doMock('./stores/theme', () => ({ useThemeStore: () => ({ theme: 'light' }) }))
+        vi.doMock('../stores/theme', () => ({ useThemeStore: () => ({ theme: 'light' }) }))
         const { useEffectiveTheme } = await import('./useEffectiveTheme')
         const { effectiveThemeName } = useEffectiveTheme()
         expect(effectiveThemeName.value).toBe('latte')
@@ -60,7 +60,7 @@ describe('useEffectiveTheme', () => {
 
     it('effectiveThemeName returns frappe for dark theme', async () => {
         mockMatchMedia(true)
-        vi.doMock('./stores/theme', () => ({ useThemeStore: () => ({ theme: 'system' }) }))
+        vi.doMock('../stores/theme', () => ({ useThemeStore: () => ({ theme: 'system' }) }))
         const { useEffectiveTheme } = await import('./useEffectiveTheme')
         const { effectiveThemeName } = useEffectiveTheme()
         expect(effectiveThemeName.value).toBe('frappe')
@@ -68,7 +68,7 @@ describe('useEffectiveTheme', () => {
 
     it('registers the media change listener exactly once across multiple useEffectiveTheme calls', async () => {
         const media = mockMatchMedia(false)
-        vi.doMock('./stores/theme', () => ({ useThemeStore: () => ({ theme: 'system' }) }))
+        vi.doMock('../stores/theme', () => ({ useThemeStore: () => ({ theme: 'system' }) }))
         const { useEffectiveTheme } = await import('./useEffectiveTheme')
         useEffectiveTheme()
         useEffectiveTheme()
@@ -78,7 +78,7 @@ describe('useEffectiveTheme', () => {
 
     it('dispose() removes the change listener', async () => {
         const media = mockMatchMedia(false)
-        vi.doMock('./stores/theme', () => ({ useThemeStore: () => ({ theme: 'system' }) }))
+        vi.doMock('../stores/theme', () => ({ useThemeStore: () => ({ theme: 'system' }) }))
         const { useEffectiveTheme } = await import('./useEffectiveTheme')
         const { dispose } = useEffectiveTheme()
         dispose()
@@ -87,7 +87,7 @@ describe('useEffectiveTheme', () => {
 
     it('dispose() allows the listener to be re-registered on the next useEffectiveTheme call', async () => {
         const media = mockMatchMedia(false)
-        vi.doMock('./stores/theme', () => ({ useThemeStore: () => ({ theme: 'system' }) }))
+        vi.doMock('../stores/theme', () => ({ useThemeStore: () => ({ theme: 'system' }) }))
         const { useEffectiveTheme } = await import('./useEffectiveTheme')
         const { dispose } = useEffectiveTheme()
         dispose()
@@ -97,7 +97,7 @@ describe('useEffectiveTheme', () => {
 
     it('applyThemeToDocument sets the data-theme attribute on the document element', async () => {
         mockMatchMedia(false)
-        vi.doMock('./stores/theme', () => ({ useThemeStore: () => ({ theme: 'light' }) }))
+        vi.doMock('../stores/theme', () => ({ useThemeStore: () => ({ theme: 'light' }) }))
         const { useEffectiveTheme } = await import('./useEffectiveTheme')
         const { applyThemeToDocument } = useEffectiveTheme()
         applyThemeToDocument()

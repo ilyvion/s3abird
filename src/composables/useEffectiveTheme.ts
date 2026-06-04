@@ -1,5 +1,5 @@
 import { ref, computed, watch } from 'vue'
-import { useThemeStore, type Theme, type ThemeName } from './stores/theme'
+import { useThemeStore, type Theme, type ThemeName } from '../stores/theme'
 
 const systemPrefersDark = ref(false)
 let isInitialized = false

@@ -23,7 +23,7 @@ vi.mock('./cache.js', () => ({
 const mockLoadEmails = vi.fn().mockResolvedValue(undefined)
 const mockLoading = ref(false)
 
-vi.mock('./useInboxLoader.js', () => ({
+vi.mock('./composables/useInboxLoader.js', () => ({
     useInboxLoader: vi.fn(() => ({
         loading: mockLoading,
         error: ref(null),

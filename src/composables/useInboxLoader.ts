@@ -5,8 +5,8 @@ import {
     GetObjectCommand,
     type _Object,
 } from '@aws-sdk/client-s3'
-import parser, { extractMeta, applyFormattedDate } from './parser.js'
-import { validateEffectiveConfig, makeCacheKey, type EffectiveBucketConfig } from './config.js'
+import parser, { extractMeta, applyFormattedDate } from '../parser.js'
+import { validateEffectiveConfig, makeCacheKey, type EffectiveBucketConfig } from '../config.js'
 import {
     getCachedEmail,
     setCachedEmail,
@@ -14,10 +14,10 @@ import {
     getAllEmailMetas,
     evictStaleEntries,
     getReadKeys,
-} from './cache.js'
-import { useEmailStore } from './stores/email.js'
-import { useConfigStore } from './stores/config.js'
-import { getS3Client, filterAndSortByDate } from './s3Utils.js'
+} from '../cache.js'
+import { useEmailStore } from '../stores/email.js'
+import { useConfigStore } from '../stores/config.js'
+import { getS3Client, filterAndSortByDate } from '../s3Utils.js'
 
 const CONCURRENCY_LIMIT = 10
 

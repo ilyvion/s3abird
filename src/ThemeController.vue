@@ -64,8 +64,8 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
 import { useThemeStore } from './stores/theme'
-import { useThreeStateCheckbox } from './useThreeStateCheckbox'
-import { useEffectiveTheme } from './useEffectiveTheme'
+import { useThreeStateCheckbox } from './composables/useThreeStateCheckbox'
+import { useEffectiveTheme } from './composables/useEffectiveTheme'
 
 const themeStore = useThemeStore()
 const { effectiveTheme } = useEffectiveTheme()

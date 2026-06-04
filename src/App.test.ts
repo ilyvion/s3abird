@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import App from './App.vue'
-import { useKeyboardShortcutsModal } from './useKeyboardShortcutsModal.js'
+import { useKeyboardShortcutsModal } from './composables/useKeyboardShortcutsModal.js'
 
 vi.mock('vue-router', () => ({
     useRouter: () => ({ push: vi.fn() }),
@@ -12,7 +12,7 @@ vi.mock('vue-router', () => ({
     RouterLink: { template: '<a />' },
 }))
 
-vi.mock('./useEffectiveTheme', () => ({
+vi.mock('./composables/useEffectiveTheme', () => ({
     useEffectiveTheme: () => ({ applyThemeToDocument: vi.fn(), dispose: vi.fn() }),
 }))
 

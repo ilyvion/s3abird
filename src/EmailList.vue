@@ -259,9 +259,9 @@ import { type EffectiveBucketConfig } from './config.js'
 import { useEmailStore } from './stores/email.js'
 import { useConfigStore } from './stores/config.js'
 import { getPage, totalPages, PAGE_SIZE } from './s3Utils.js'
-import { useKeyboardShortcutsModal } from './useKeyboardShortcutsModal.js'
-import { useThreeStateCheckbox } from './useThreeStateCheckbox.js'
-import { useInboxLoader } from './useInboxLoader.js'
+import { useKeyboardShortcutsModal } from './composables/useKeyboardShortcutsModal.js'
+import { useThreeStateCheckbox } from './composables/useThreeStateCheckbox.js'
+import { useInboxLoader } from './composables/useInboxLoader.js'
 import { getItem as lsGetItem, setItem as lsSetItem } from './localStorage.js'
 
 const vIndeterminate: ObjectDirective<HTMLInputElement, boolean> = {

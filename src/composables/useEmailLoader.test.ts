@@ -4,10 +4,10 @@ import { defineComponent } from 'vue'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { useEmailLoader } from './useEmailLoader'
-import { useEmailStore } from './stores/email'
-import { makeCacheKey } from './config'
-import type { ParsedEmail } from './parser'
-import { getS3Client } from './s3Utils'
+import { useEmailStore } from '../stores/email'
+import { makeCacheKey } from '../config'
+import type { ParsedEmail } from '../parser'
+import { getS3Client } from '../s3Utils'
 import type { S3Client } from '@aws-sdk/client-s3'
 
 const mockCachedEmail = {
@@ -19,7 +19,7 @@ const mockCachedEmail = {
 const mockGetCachedEmail = vi.fn()
 const mockSetCachedEmail = vi.fn()
 
-vi.mock('./cache.js', () => ({
+vi.mock('../cache.js', () => ({
     getCachedEmail: (...args: unknown[]) => mockGetCachedEmail(...args),
     setCachedEmail: (...args: unknown[]) => mockSetCachedEmail(...args),
     setEmailMeta: vi.fn().mockResolvedValue(undefined),
@@ -34,11 +34,11 @@ vi.mock('@aws-sdk/client-s3', () => ({
     GetObjectCommand: vi.fn(),
 }))
 
-vi.mock('./parser.js', () => ({
+vi.mock('../parser.js', () => ({
     default: vi.fn(),
 }))
 
-vi.mock('./s3Utils.js', () => ({
+vi.mock('../s3Utils.js', () => ({
     getS3Client: vi.fn(),
 }))
 
@@ -197,7 +197,7 @@ describe('useEmailLoader', () => {
             mockSetCachedEmail.mockResolvedValue(undefined)
 
             const parsed = { key: messageId, subject: 'From S3' } as unknown as ParsedEmail
-            const { default: parserMod } = await import('./parser.js')
+            const { default: parserMod } = await import('../parser.js')
             vi.mocked(parserMod).mockResolvedValue(parsed)
 
             const stream = new ReadableStream({

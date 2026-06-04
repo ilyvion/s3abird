@@ -3,14 +3,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { flushPromises } from '@vue/test-utils'
 import { useInboxLoader } from './useInboxLoader'
-import { useEmailStore } from './stores/email'
+import { useEmailStore } from '../stores/email'
 
 const mockEvictStaleEntries = vi.fn()
 const mockS3Send = vi.fn()
 const mockSetCachedEmail = vi.fn()
 const mockSetEmailMeta = vi.fn()
 
-vi.mock('./cache.js', () => ({
+vi.mock('../cache.js', () => ({
     evictStaleEntries: (...args: unknown[]) => mockEvictStaleEntries(...args),
     getAllEmailMetas: vi.fn().mockResolvedValue([]),
     getReadKeys: vi.fn().mockResolvedValue(new Set<string>()),
@@ -19,7 +19,7 @@ vi.mock('./cache.js', () => ({
     setEmailMeta: (...args: unknown[]) => mockSetEmailMeta(...args),
 }))
 
-vi.mock('./s3Utils.js', () => ({
+vi.mock('../s3Utils.js', () => ({
     getS3Client: vi.fn().mockReturnValue({
         send: (...args: unknown[]) => mockS3Send(...args),
     }),
@@ -32,7 +32,7 @@ vi.mock('@aws-sdk/client-s3', () => ({
     GetObjectCommand: vi.fn(),
 }))
 
-vi.mock('./parser.js', () => ({
+vi.mock('../parser.js', () => ({
     default: vi.fn(),
     extractMeta: vi.fn().mockReturnValue({ key: 'k', formattedDate: '', textPreview: '' }),
     applyFormattedDate: vi.fn().mockImplementation((m: unknown) => m),
@@ -150,7 +150,7 @@ describe('useInboxLoader', () => {
                 },
             })
 
-            const { default: parserMod } = await import('./parser.js')
+            const { default: parserMod } = await import('../parser.js')
             vi.mocked(parserMod).mockResolvedValue({
                 subject: 'Test',
                 from: [],
@@ -223,8 +223,8 @@ describe('useInboxLoader', () => {
         })
 
         it('adds email meta from cache when a cached email is found during task processing', async () => {
-            const { applyFormattedDate, extractMeta } = await import('./parser.js')
-            const { getCachedEmail } = await import('./cache.js')
+            const { applyFormattedDate, extractMeta } = await import('../parser.js')
+            const { getCachedEmail } = await import('../cache.js')
 
             const cachedEmail = {
                 key: 'test-cache-key',

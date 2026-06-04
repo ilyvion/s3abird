@@ -8,7 +8,7 @@ import { useThemeStore } from './stores/theme'
 
 const mockEffectiveTheme = ref<'light' | 'dark'>('light')
 
-vi.mock('./useEffectiveTheme', () => ({
+vi.mock('./composables/useEffectiveTheme', () => ({
     useEffectiveTheme: () => ({ effectiveTheme: mockEffectiveTheme }),
 }))
 

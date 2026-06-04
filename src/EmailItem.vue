@@ -12,8 +12,8 @@
 import { onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import EmailDisplay from './EmailDisplay.vue'
-import { useEmailLoader } from './useEmailLoader.js'
-import { useKeyboardShortcutsModal } from './useKeyboardShortcutsModal.js'
+import { useEmailLoader } from './composables/useEmailLoader.js'
+import { useKeyboardShortcutsModal } from './composables/useKeyboardShortcutsModal.js'
 
 const props = defineProps<{
     messageId: string

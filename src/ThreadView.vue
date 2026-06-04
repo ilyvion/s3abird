@@ -41,8 +41,8 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEmailStore } from './stores/email.js'
-import { useKeyboardShortcutsModal } from './useKeyboardShortcutsModal.js'
-import { useInboxLoader } from './useInboxLoader.js'
+import { useKeyboardShortcutsModal } from './composables/useKeyboardShortcutsModal.js'
+import { useInboxLoader } from './composables/useInboxLoader.js'
 import ThreadEmailCard from './ThreadEmailCard.vue'
 import type { EmailMeta } from './parser.js'
 

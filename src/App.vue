@@ -41,8 +41,8 @@ import BucketSelector from './BucketSelector.vue'
 import Navbar from './MainNavbar.vue'
 import Footer from './MainFooter.vue'
 import KeyboardShortcutsModal from './KeyboardShortcutsModal.vue'
-import { useEffectiveTheme } from './useEffectiveTheme'
-import { useKeyboardShortcutsModal } from './useKeyboardShortcutsModal.js'
+import { useEffectiveTheme } from './composables/useEffectiveTheme'
+import { useKeyboardShortcutsModal } from './composables/useKeyboardShortcutsModal.js'
 
 const route = useRoute()
 const isSetupRoute = computed(() => route.path === '/setup' || route.path === '/setup/add')

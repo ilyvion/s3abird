@@ -1,11 +1,11 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
-import parser, { type ParsedEmail } from './parser.js'
-import { validateEffectiveConfig, decodeCacheKey } from './config.js'
-import { getCachedEmail, setCachedEmail } from './cache.js'
-import { getS3Client } from './s3Utils.js'
-import { useConfigStore } from './stores/config.js'
-import { useEmailStore } from './stores/email.js'
+import parser, { type ParsedEmail } from '../parser.js'
+import { validateEffectiveConfig, decodeCacheKey } from '../config.js'
+import { getCachedEmail, setCachedEmail } from '../cache.js'
+import { getS3Client } from '../s3Utils.js'
+import { useConfigStore } from '../stores/config.js'
+import { useEmailStore } from '../stores/email.js'
 
 export function useEmailLoader(messageId: string) {
     const configStore = useConfigStore()
