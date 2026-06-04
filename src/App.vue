@@ -22,7 +22,7 @@
             <Footer />
         </div>
 
-        <div v-if="!isSetupRoute" class="drawer-side z-20 lg:hidden">
+        <div v-if="!isFirstSetupRoute" class="drawer-side z-20 lg:hidden">
             <label for="menu-drawer" aria-label="close menu" class="drawer-overlay" />
             <div class="bg-base-300 h-screen w-[90%]">
                 <BucketSelector class="m-2" />
@@ -45,7 +45,7 @@ import { useEffectiveTheme } from './composables/useEffectiveTheme'
 import { useKeyboardShortcutsModal } from './composables/useKeyboardShortcutsModal.js'
 
 const route = useRoute()
-const isSetupRoute = computed(() => route.path === '/setup' || route.path === '/setup/add')
+const isFirstSetupRoute = computed(() => route.path === '/setup')
 
 const { applyThemeToDocument, dispose } = useEffectiveTheme()
 applyThemeToDocument()
