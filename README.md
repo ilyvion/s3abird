@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/ilyvion/s3abird/graph/badge.svg?token=EK06S72O1C)](https://codecov.io/gh/ilyvion/s3abird)
+
 # What is s3abird?
 
 It's a webmail client for viewing emails stored on AWS S3 buckets.
@@ -6,13 +8,25 @@ The purpose of this project is to give an easy interface to browse
 through emails received via AWS SES and stored on S3 buckets, although
 it will work on any buckets containing raw emails.
 
+## Features
+
+- Browse and search emails stored in S3, with fast local caching via IndexedDB
+- Read/unread tracking persisted across sessions
+- Attachment listing and download
+- Thread grouping with a conversation view
+- Keyboard navigation throughout (see `?` for the shortcuts modal)
+- Filter by from, to, subject, or body text; filters persist per bucket
+- Multi-select with bulk mark-as-read
+- Dark/light theme support
+- Docker image included for self-hosted deployments
+
 # Setup
 
 There are several steps required to make _s3abird_ work.
 
 - creating an S3 bucket
 - creating credentials that have read access to this bucket
-- setting proper CORS policy
+- setting a proper CORS policy on the bucket
 
 IAM policy granting read access:
 
@@ -23,7 +37,7 @@ IAM policy granting read access:
         {
             "Sid": "AllowBucketRead",
             "Effect": "Allow",
-            "Action": ["s3:listBucket", "s3:getObject"],
+            "Action": ["s3:ListBucket", "s3:GetObject"],
             "Resource": ["arn:aws:s3:::<your_bucket_name>", "arn:aws:s3:::<your_bucket_name>/*"]
         }
     ]
@@ -43,8 +57,12 @@ A sufficient CORS policy can look like this:
 ]
 ```
 
-Besides configuring an S3 bucket for reads you will probably want to
-[configure
+> **Note:** The `AllowedOrigins: ["*"]` wildcard is fine for private/internal use, but
+> in production you should restrict it to the domain where you host s3abird. For using it with
+> the [officially hosted s3abird instance](https://s3abird.alexanderschroeder.net), you can use
+> `"AllowedOrigins": ["https://s3abird.alexanderschroeder.net"]`
+
+Besides configuring an S3 bucket for reads you will probably want to [configure
 SES](https://docs.aws.amazon.com/ses/latest/DeveloperGuide/receiving-email-getting-started.html)
 so that it can store incoming messages in this bucket.
 
@@ -65,16 +83,23 @@ npm run build
 npm run preview
 ```
 
-The project also includes a `Dockerfile` that can be used to run the project in a container.
+## Docker
+
+The project includes a `Dockerfile` for running s3abird in a container:
+
+```sh
+docker build -t s3abird .
+docker run -p 8080:80 s3abird
+```
+
+Then open `http://localhost:8080` in your browser.
 
 # Roadmap
 
-The following features are likely to be integrated soon into s3abird.
+The following features are candidates for future integration:
 
-- integrate SES so that it's possible to reply to emails or write new
-  ones
-- modularise email storage and sending so that it's possible to use
-  other providers
+- integrate SES so that it's possible to reply to emails or write new ones
+- modularise email storage and sending so that it's possible to use other providers
 
 # Contributing
 
@@ -83,3 +108,7 @@ the roadmap.
 
 If there are particular features you would like to see you can also
 [submit a ticket](https://github.com/ilyvion/s3abird/issues/new).
+
+# License
+
+[MIT](LICENSE)
