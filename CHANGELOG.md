@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 404 catch-all route rendering a "Page not found" view with a `noindex` robots meta tag (via `@unhead/vue`) to prevent search engine indexing of unknown URLs.
 - First-run setup wizard (`/setup`) shown automatically to users with no configuration; offers a guided flow (S3 bucket → CORS policy → IAM policy → IAM user → access keys) and an expert mode (enter all credentials at once); redirects to `/inbox` once configured.
 
+### Fixed
+
+- Mobile drawer now closes automatically when switching buckets or opening the Settings modal; drawer layout improved with proper flex-column structure and full-width controls.
+
 ## [0.4.1] - 2026-06-03
 
 ### Fixed

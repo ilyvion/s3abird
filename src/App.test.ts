@@ -16,6 +16,10 @@ vi.mock('./composables/useEffectiveTheme', () => ({
     useEffectiveTheme: () => ({ applyThemeToDocument: vi.fn(), dispose: vi.fn() }),
 }))
 
+vi.mock('./stores/config', () => ({
+    useConfigStore: () => ({ allBuckets: [] }),
+}))
+
 vi.mock('./MainNavbar.vue', () => ({ default: { template: '<div />' } }))
 vi.mock('./MainFooter.vue', () => ({ default: { template: '<div />' } }))
 vi.mock('./AwsSettings.vue', () => ({ default: { template: '<div />' } }))

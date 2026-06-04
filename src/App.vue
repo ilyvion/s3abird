@@ -1,6 +1,6 @@
 <template>
     <div class="drawer h-screen">
-        <input id="menu-drawer" type="checkbox" class="drawer-toggle" />
+        <input id="menu-drawer" ref="drawerCheckbox" type="checkbox" class="drawer-toggle" />
         <div class="drawer-content flex h-screen flex-col">
             <Navbar />
             <div class="bg-base-200 container mx-auto flex-grow overflow-auto" tabindex="-1">
@@ -24,9 +24,14 @@
 
         <div v-if="!isFirstSetupRoute" class="drawer-side z-20 lg:hidden">
             <label for="menu-drawer" aria-label="close menu" class="drawer-overlay" />
-            <div class="bg-base-300 h-screen w-[90%]">
-                <BucketSelector class="m-2" />
-                <Settings class="m-2 flex-col" />
+            <div class="bg-base-300 flex h-screen w-[90%] flex-col gap-3 p-4">
+                <BucketSelector
+                    v-if="hasMultipleBuckets && !isSetupRoute"
+                    class="w-full"
+                    @change="closeDrawer"
+                />
+                <div v-if="hasMultipleBuckets" class="divider my-0" />
+                <Settings class="w-full justify-start text-base" @click="closeDrawer" />
             </div>
         </div>
     </div>
@@ -34,7 +39,7 @@
     <KeyboardShortcutsModal v-model="showShortcutsModal" />
 </template>
 <script lang="ts" setup>
-import { computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import Settings from './AwsSettings.vue'
 import BucketSelector from './BucketSelector.vue'
@@ -43,9 +48,18 @@ import Footer from './MainFooter.vue'
 import KeyboardShortcutsModal from './KeyboardShortcutsModal.vue'
 import { useEffectiveTheme } from './composables/useEffectiveTheme'
 import { useKeyboardShortcutsModal } from './composables/useKeyboardShortcutsModal.js'
+import { useConfigStore } from './stores/config'
+
+const drawerCheckbox = ref<HTMLInputElement | null>(null)
+function closeDrawer() {
+    if (drawerCheckbox.value) drawerCheckbox.value.checked = false
+}
 
 const route = useRoute()
+const configStore = useConfigStore()
 const isFirstSetupRoute = computed(() => route.path === '/setup')
+const isSetupRoute = computed(() => route.path.startsWith('/setup'))
+const hasMultipleBuckets = computed(() => configStore.allBuckets.length > 1)
 
 const { applyThemeToDocument, dispose } = useEffectiveTheme()
 applyThemeToDocument()
