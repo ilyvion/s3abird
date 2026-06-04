@@ -19,6 +19,7 @@
     "dependencies": {
         "@aws-sdk/client-s3": "^3.787.0",
         "@tailwindcss/vite": "^4.1.4",
+        "@unhead/vue": "^3.1.1",
         "animate.css": "^4.1.1",
         "dompurify": "^3.2.5",
         "idb": "^8.0.2",
