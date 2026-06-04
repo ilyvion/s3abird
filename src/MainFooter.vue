@@ -4,7 +4,10 @@
     >
         <div class="flex flex-col gap-2">
             <span
-                >v{{ version }} — Current version maintained with <i class="fas fa-heart" /> by
+                ><button class="link cursor-pointer" @click="openChangelogModal">
+                    v{{ version }}
+                </button>
+                — Current version maintained with <i class="fas fa-heart" /> by
                 <a class="link" href="https://alexanderschroeder.net/"
                     >Alexander&nbsp;Krivács&nbsp;Schrøder</a
                 ></span
@@ -24,4 +27,7 @@
 
 <script setup lang="ts">
 import { version } from '../package.json'
+import { useChangelogModal } from './composables/useChangelogModal.js'
+
+const { openModal: openChangelogModal } = useChangelogModal()
 </script>

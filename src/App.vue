@@ -37,6 +37,7 @@
     </div>
 
     <KeyboardShortcutsModal v-model="showShortcutsModal" />
+    <ChangelogModal v-model="showChangelogModal" />
 </template>
 <script lang="ts" setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
@@ -46,8 +47,10 @@ import BucketSelector from './BucketSelector.vue'
 import Navbar from './MainNavbar.vue'
 import Footer from './MainFooter.vue'
 import KeyboardShortcutsModal from './KeyboardShortcutsModal.vue'
+import ChangelogModal from './ChangelogModal.vue'
 import { useEffectiveTheme } from './composables/useEffectiveTheme'
 import { useKeyboardShortcutsModal } from './composables/useKeyboardShortcutsModal.js'
+import { useChangelogModal } from './composables/useChangelogModal.js'
 import { useConfigStore } from './stores/config'
 
 const drawerCheckbox = ref<HTMLInputElement | null>(null)
@@ -66,6 +69,7 @@ applyThemeToDocument()
 onBeforeUnmount(dispose)
 
 const { showShortcutsModal } = useKeyboardShortcutsModal()
+const { showChangelogModal } = useChangelogModal()
 
 function handleKeyDown(e: KeyboardEvent) {
     if (showShortcutsModal.value) return
