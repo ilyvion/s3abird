@@ -1,6 +1,6 @@
 // @vitest-environment node
 import 'fake-indexeddb/auto'
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest'
 import {
     getCachedEmail,
     setCachedEmail,
@@ -241,6 +241,32 @@ describe('cache', () => {
             await markAsRead('key1')
             await clearEmailCache()
             expect(await getReadKeys()).toEqual(new Set())
+        })
+    })
+
+    describe('DB name configuration', () => {
+        afterAll(() => {
+            vi.resetModules()
+        })
+
+        it('uses VITE_DB_NAME env var when set', async () => {
+            vi.resetModules()
+            vi.stubEnv('VITE_DB_NAME', 'custom-test-db')
+            const openDBSpy = vi.fn().mockResolvedValue({})
+            vi.doMock('idb', () => ({ openDB: openDBSpy }))
+            await import('./cache.js')
+            expect(openDBSpy).toHaveBeenCalledWith('custom-test-db', 4, expect.any(Object))
+            vi.unstubAllEnvs()
+            vi.doUnmock('idb')
+        })
+
+        it('falls back to email-cache when VITE_DB_NAME is not set', async () => {
+            vi.resetModules()
+            const openDBSpy = vi.fn().mockResolvedValue({})
+            vi.doMock('idb', () => ({ openDB: openDBSpy }))
+            await import('./cache.js')
+            expect(openDBSpy).toHaveBeenCalledWith('email-cache', 4, expect.any(Object))
+            vi.doUnmock('idb')
         })
     })
 

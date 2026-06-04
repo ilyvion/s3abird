@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { getItem as lsGetItem, setItem as lsSetItem } from '../localStorage'
 
 export type Theme = 'system' | 'light' | 'dark'
 export type ThemeName = 'latte' | 'frappe'
@@ -42,9 +43,10 @@ export const useThemeStore = defineStore('theme', {
 })
 
 function persistTheme(theme: Theme) {
-    localStorage.theme = JSON.stringify(theme)
+    lsSetItem('theme', JSON.stringify(theme))
 }
 
 function loadTheme(): Theme | null {
-    return localStorage.theme ? JSON.parse(localStorage.theme) : null
+    const v = lsGetItem('theme')
+    return v ? JSON.parse(v) : null
 }

@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.nvmrc` pinning Node.js to v24.15.0 for consistent local and CI environments.
 - Tests for `AwsSettings` (CRUD state machine, bucket/prefix parsing, credential editing), `BucketSelector` (visibility, labels, active bucket selection), `KeyboardShortcutsModal` (v-model wiring, both close paths), and `ThemeController` (theme actions, highlight classes), `stores/theme` (getters, actions, localStorage persistence), `EmailAddress` (address formatting), `useKeyboardShortcutsModal` (open/close/shared state), and `useEffectiveTheme` (`applyThemeToDocument`); expanded tests for `EmailDisplay` (download attachment, CC separator), `s3Utils` (S3 client caching and cache clearing), `config` (all three legacy migration formats, all validation failure paths), `useEmailLoader` (bucket-not-found, no-body, S3 error, and successful fetch), and `useInboxLoader` (no active bucket, cached email during task); raises statement coverage from 75% to 92%.
 - 404 catch-all route rendering a "Page not found" view with a `noindex` robots meta tag (via `@unhead/vue`) to prevent search engine indexing of unknown URLs.
+- First-run setup wizard (`/setup`) shown automatically to users with no configuration; offers a guided flow (S3 bucket → CORS policy → IAM policy → IAM user → access keys) and an expert mode (enter all credentials at once); redirects to `/inbox` once configured.
 
 ## [0.4.1] - 2026-06-03
 

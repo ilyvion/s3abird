@@ -7,6 +7,7 @@ import { useConfigStore } from './config'
 import type { EffectiveBucketConfig } from '../config'
 import { groupIntoThreads } from '../threads'
 import type { ThreadGroup } from '../threads'
+import { getItem as lsGetItem, setItem as lsSetItem } from '../localStorage'
 
 function bucketFilterKey(bucket: EffectiveBucketConfig): string {
     const id = bucket.prefix
@@ -58,15 +59,15 @@ export const useEmailStore = defineStore('email', {
         addLabel(label: Label) {
             this.labels.push(label)
             const bucket = useConfigStore().activeBucket
-            if (bucket) localStorage[bucketFilterKey(bucket)] = serialize(this.labels)
+            if (bucket) lsSetItem(bucketFilterKey(bucket), serialize(this.labels))
         },
         removeLabel(label: Label) {
             this.labels = this.labels.filter((l) => l !== label)
             const bucket = useConfigStore().activeBucket
-            if (bucket) localStorage[bucketFilterKey(bucket)] = serialize(this.labels)
+            if (bucket) lsSetItem(bucketFilterKey(bucket), serialize(this.labels))
         },
         loadPersistedFilters(bucketId: string) {
-            const stored = localStorage[`filters:${bucketId}`] as string | undefined
+            const stored = lsGetItem(`filters:${bucketId}`)
             this.labels = stored ? deserialize(stored) : []
         },
         setReadKeys(keys: Set<string>) {

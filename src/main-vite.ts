@@ -7,10 +7,12 @@ import App from './App.vue'
 import Email from './EmailItem.vue'
 import EmailList from './EmailList.vue'
 import NotFound from './NotFound.vue'
+import SetupWizard from './SetupWizard.vue'
 import ThreadView from './ThreadView.vue'
 
 import 'animate.css'
 import './style.css'
+import { getItem as lsGetItem } from './localStorage'
 
 const router = createRouter({
     history: createWebHistory(),
@@ -19,8 +21,23 @@ const router = createRouter({
         { path: '/inbox', component: EmailList },
         { path: '/inbox/thread/:threadId', component: ThreadView, props: true },
         { path: '/inbox/:messageId', component: Email, props: true },
+        { path: '/setup', component: SetupWizard },
+        { path: '/setup/add', component: SetupWizard },
         { path: '/:pathMatch(.*)*', component: NotFound },
     ],
+})
+
+router.beforeEach((to) => {
+    const config = lsGetItem('config')
+    const isConfigured = !!config && config !== 'null'
+    // Unconfigured users may only visit the initial setup page
+    if (!isConfigured && to.path !== '/setup') {
+        return '/setup'
+    }
+    // Configured users are bounced away from initial setup (but /setup/add is fine)
+    if (isConfigured && to.path === '/setup') {
+        return '/inbox'
+    }
 })
 
 createApp(App).use(createHead()).use(router).use(createPinia()).mount('#app')

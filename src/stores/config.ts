@@ -3,8 +3,9 @@ import type { AwsConfig, EffectiveBucketConfig } from '../config'
 import { migrateLegacyConfig, flattenBuckets } from '../config'
 import { clearEmailCacheForBuckets } from '../cache'
 import { clearS3ClientCache } from '../s3Utils'
+import { getItem as lsGetItem, setItem as lsSetItem } from '../localStorage'
 
-function parseStoredConfig(s: string | undefined): AwsConfig | null {
+function parseStoredConfig(s: string | null): AwsConfig | null {
     try {
         return migrateLegacyConfig(JSON.parse(s || 'null'))
     } catch {
@@ -14,8 +15,8 @@ function parseStoredConfig(s: string | undefined): AwsConfig | null {
 
 export const useConfigStore = defineStore('config', {
     state: () => ({
-        config: parseStoredConfig(localStorage.config),
-        activeBucketIndex: parseInt(localStorage.activeBucketIndex || '0', 10),
+        config: parseStoredConfig(lsGetItem('config')),
+        activeBucketIndex: parseInt(lsGetItem('activeBucketIndex') || '0', 10),
     }),
     getters: {
         allBuckets: (state): EffectiveBucketConfig[] => {
@@ -33,12 +34,12 @@ export const useConfigStore = defineStore('config', {
         updateConfig(newConfig: AwsConfig) {
             const oldConfig = this.config
             this.config = newConfig
-            localStorage.config = JSON.stringify(newConfig)
+            lsSetItem('config', JSON.stringify(newConfig))
 
             const newBuckets = flattenBuckets(newConfig)
             if (this.activeBucketIndex >= newBuckets.length) {
                 this.activeBucketIndex = Math.max(0, newBuckets.length - 1)
-                localStorage.activeBucketIndex = String(this.activeBucketIndex)
+                lsSetItem('activeBucketIndex', String(this.activeBucketIndex))
             }
 
             const oldBuckets = oldConfig ? flattenBuckets(oldConfig) : []
@@ -72,7 +73,7 @@ export const useConfigStore = defineStore('config', {
         },
         setActiveBucket(index: number) {
             this.activeBucketIndex = index
-            localStorage.activeBucketIndex = String(index)
+            lsSetItem('activeBucketIndex', String(index))
         },
     },
 })

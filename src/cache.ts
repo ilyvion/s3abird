@@ -15,7 +15,9 @@ interface CacheEntry {
     cachedAt: number
 }
 
-const dbPromise = openDB('email-cache', 4, {
+const DB_NAME = import.meta.env.VITE_DB_NAME ?? 'email-cache'
+
+const dbPromise = openDB(DB_NAME, 4, {
     upgrade(db, oldVersion) {
         if (oldVersion < 2) {
             // Entries from v1 have no timestamp; drop and recreate the store.

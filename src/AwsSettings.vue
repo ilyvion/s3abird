@@ -90,13 +90,18 @@
                     </div>
                 </div>
 
-                <button
-                    class="btn btn-primary btn-sm self-start"
-                    type="button"
-                    @click="startAddCredential"
-                >
-                    <i class="fas fa-plus" /> Add Credentials
-                </button>
+                <div class="flex flex-wrap gap-2">
+                    <button
+                        class="btn btn-primary btn-sm"
+                        type="button"
+                        @click="startAddCredential"
+                    >
+                        <i class="fas fa-plus" /> Add Credentials
+                    </button>
+                    <button class="btn btn-ghost btn-sm" type="button" @click="openWizard">
+                        <i class="fas fa-magic" /> Use Setup Wizard
+                    </button>
+                </div>
             </div>
 
             <!-- Credential form -->
@@ -199,6 +204,7 @@
 
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import type { AwsCredentials, AwsBucketEntry } from './config'
 import { useConfigStore } from './stores/config'
 
@@ -210,6 +216,7 @@ type Mode =
     | { type: 'bucket'; credentialIndex: number; bucketIndex: number }
 
 const configStore = useConfigStore()
+const router = useRouter()
 const modalRef = ref<HTMLDialogElement | null>(null)
 const mode = ref<Mode>({ type: 'list' })
 
@@ -230,6 +237,11 @@ function closeModal() {
 
 function goToList() {
     mode.value = { type: 'list' }
+}
+
+function openWizard() {
+    closeModal()
+    void router.push('/setup/add')
 }
 
 function startAddCredential() {

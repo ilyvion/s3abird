@@ -22,7 +22,7 @@
             <Footer />
         </div>
 
-        <div class="drawer-side z-20 lg:hidden">
+        <div v-if="!isSetupRoute" class="drawer-side z-20 lg:hidden">
             <label for="menu-drawer" aria-label="close menu" class="drawer-overlay" />
             <div class="bg-base-300 h-screen w-[90%]">
                 <BucketSelector class="m-2" />
@@ -34,7 +34,8 @@
     <KeyboardShortcutsModal v-model="showShortcutsModal" />
 </template>
 <script lang="ts" setup>
-import { onMounted, onBeforeUnmount } from 'vue'
+import { computed, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
 import Settings from './AwsSettings.vue'
 import BucketSelector from './BucketSelector.vue'
 import Navbar from './MainNavbar.vue'
@@ -42,6 +43,9 @@ import Footer from './MainFooter.vue'
 import KeyboardShortcutsModal from './KeyboardShortcutsModal.vue'
 import { useEffectiveTheme } from './useEffectiveTheme'
 import { useKeyboardShortcutsModal } from './useKeyboardShortcutsModal.js'
+
+const route = useRoute()
+const isSetupRoute = computed(() => route.path === '/setup' || route.path === '/setup/add')
 
 const { applyThemeToDocument, dispose } = useEffectiveTheme()
 applyThemeToDocument()

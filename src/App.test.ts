@@ -7,6 +7,7 @@ import { useKeyboardShortcutsModal } from './useKeyboardShortcutsModal.js'
 
 vi.mock('vue-router', () => ({
     useRouter: () => ({ push: vi.fn() }),
+    useRoute: () => ({ path: '/inbox' }),
     RouterView: { template: '<div />' },
     RouterLink: { template: '<a />' },
 }))

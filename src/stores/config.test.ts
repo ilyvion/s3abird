@@ -21,7 +21,15 @@ vi.mock('../config', async (importOriginal) => {
 })
 
 const storageMock: Record<string, string> = {}
-vi.stubGlobal('localStorage', storageMock)
+vi.stubGlobal('localStorage', {
+    getItem: (key: string) => storageMock[key] ?? null,
+    setItem: (key: string, value: string) => {
+        storageMock[key] = value
+    },
+    removeItem: (key: string) => {
+        delete storageMock[key]
+    },
+})
 
 const baseConfig: AwsConfig = {
     credentials: [

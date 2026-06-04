@@ -262,6 +262,7 @@ import { getPage, totalPages, PAGE_SIZE } from './s3Utils.js'
 import { useKeyboardShortcutsModal } from './useKeyboardShortcutsModal.js'
 import { useThreeStateCheckbox } from './useThreeStateCheckbox.js'
 import { useInboxLoader } from './useInboxLoader.js'
+import { getItem as lsGetItem, setItem as lsSetItem } from './localStorage.js'
 
 const vIndeterminate: ObjectDirective<HTMLInputElement, boolean> = {
     mounted: (el, { value }) => {
@@ -292,7 +293,7 @@ function groupThreadsKey(bucket: EffectiveBucketConfig): string {
 
 function loadGroupThreads(bucket: EffectiveBucketConfig): void {
     try {
-        groupThreads.value = localStorage.getItem(groupThreadsKey(bucket)) === 'true'
+        groupThreads.value = lsGetItem(groupThreadsKey(bucket)) === 'true'
     } catch {
         groupThreads.value = false
     }
@@ -300,7 +301,7 @@ function loadGroupThreads(bucket: EffectiveBucketConfig): void {
 
 function saveGroupThreads(bucket: EffectiveBucketConfig): void {
     try {
-        localStorage.setItem(groupThreadsKey(bucket), String(groupThreads.value))
+        lsSetItem(groupThreadsKey(bucket), String(groupThreads.value))
     } catch {
         // ignore storage errors
     }
