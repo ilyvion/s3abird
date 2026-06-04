@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Test coverage reporting via `@vitest/coverage-v8`; run with `npm run test:coverage`.
+- CI workflow job that runs `npm run test:coverage` and uploads results to Codecov on every push.
+- `.nvmrc` pinning Node.js to v24.15.0 for consistent local and CI environments.
 - Tests for `AwsSettings` (CRUD state machine, bucket/prefix parsing, credential editing), `BucketSelector` (visibility, labels, active bucket selection), `KeyboardShortcutsModal` (v-model wiring, both close paths), and `ThemeController` (theme actions, highlight classes), `stores/theme` (getters, actions, localStorage persistence), `EmailAddress` (address formatting), `useKeyboardShortcutsModal` (open/close/shared state), and `useEffectiveTheme` (`applyThemeToDocument`); expanded tests for `EmailDisplay` (download attachment, CC separator), `s3Utils` (S3 client caching and cache clearing), `config` (all three legacy migration formats, all validation failure paths), `useEmailLoader` (bucket-not-found, no-body, S3 error, and successful fetch), and `useInboxLoader` (no active bucket, cached email during task); raises statement coverage from 75% to 92%.
 
 ## [0.4.1] - 2026-06-03
