@@ -310,6 +310,77 @@ describe('EmailDisplay frame theming', () => {
     })
 })
 
+describe('EmailDisplay frame keyboard forwarding', () => {
+    async function mountLoaded(email: ParsedEmail) {
+        const wrapper = mount(EmailDisplay, {
+            props: { email },
+            global: { stubs },
+            attachTo: document.body,
+        })
+        const iframe = wrapper.find('iframe').element as HTMLIFrameElement
+        await new Promise<void>((resolve) => iframe.addEventListener('load', () => resolve()))
+        return { wrapper, frameDoc: iframe.contentDocument! }
+    }
+
+    function listenOnWindow() {
+        const received: KeyboardEvent[] = []
+        const listener = (e: KeyboardEvent) => received.push(e)
+        window.addEventListener('keydown', listener)
+        return { received, stop: () => window.removeEventListener('keydown', listener) }
+    }
+
+    it('forwards keydown from inside the frame to the app window', async () => {
+        const { wrapper, frameDoc } = await mountLoaded(makeEmail())
+        const { received, stop } = listenOnWindow()
+
+        frameDoc.body.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'Escape', shiftKey: true, bubbles: true })
+        )
+
+        expect(received.map((e) => [e.key, e.shiftKey])).toEqual([['Escape', true]])
+        stop()
+        wrapper.unmount()
+    })
+
+    it('prevents the default action in the frame when the app handler does', async () => {
+        const { wrapper, frameDoc } = await mountLoaded(makeEmail())
+        const preventer = (e: KeyboardEvent) => e.preventDefault()
+        window.addEventListener('keydown', preventer)
+
+        const event = new KeyboardEvent('keydown', {
+            key: 'Backspace',
+            bubbles: true,
+            cancelable: true,
+        })
+        frameDoc.body.dispatchEvent(event)
+
+        expect(event.defaultPrevented).toBe(true)
+        window.removeEventListener('keydown', preventer)
+        wrapper.unmount()
+    })
+
+    it('keeps forwarding after the frame reloads to show remote images', async () => {
+        const html = '<img src="https://tracker.example/p.gif">'
+        const { wrapper } = await mountLoaded(makeEmail({ html, processedHtml: html }))
+        const iframe = wrapper.find('iframe').element as HTMLIFrameElement
+        const reloaded = new Promise<void>((resolve) =>
+            iframe.addEventListener('load', () => resolve())
+        )
+        const button = wrapper.findAll('button').find((b) => b.text() === 'Load remote images')!
+        await button.trigger('click')
+        await reloaded
+        const { received, stop } = listenOnWindow()
+
+        iframe.contentDocument!.body.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'u', bubbles: true })
+        )
+
+        expect(received.map((e) => e.key)).toEqual(['u'])
+        stop()
+        wrapper.unmount()
+    })
+})
+
 describe('EmailDisplay CC rendering', () => {
     it('renders a comma separator between multiple CC addresses', () => {
         const email = makeEmail({

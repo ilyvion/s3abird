@@ -126,7 +126,26 @@ function applyThemeToFrame(): void {
     root.style.colorScheme = computedStyle.colorScheme
 }
 
+// Focus inside the frame keeps keydown in the frame's document, out of reach of the app's
+// window-level keyboard shortcuts.
+function forwardFrameKeyDown(e: KeyboardEvent): void {
+    const forwarded = new KeyboardEvent('keydown', {
+        key: e.key,
+        code: e.code,
+        location: e.location,
+        repeat: e.repeat,
+        altKey: e.altKey,
+        ctrlKey: e.ctrlKey,
+        metaKey: e.metaKey,
+        shiftKey: e.shiftKey,
+        bubbles: true,
+        cancelable: true,
+    })
+    if (!window.dispatchEvent(forwarded)) e.preventDefault()
+}
+
 function onFrameLoad(): void {
+    frame.value?.contentDocument?.addEventListener('keydown', forwardFrameKeyDown)
     applyThemeToFrame()
     measureFrame()
     resizeObserver?.disconnect()
