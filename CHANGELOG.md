@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Form fields and buttons inside emails are removed.
 - The Docker image's web server sends a Content-Security-Policy. The page only runs its own scripts, only connects to AWS, cannot submit forms and cannot be embedded in other sites.
 - Updated all dependencies, including the HTML sanitizer and the email parser, to pick up their security and parsing fixes.
+- The Docker image's web server no longer runs any process as root, and the image is built with Node.js 24.
 
 ### Fixed
 

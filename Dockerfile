@@ -1,5 +1,5 @@
 # Stage 1: Build the static site
-FROM node:23-slim AS builder
+FROM node:24.15.0-slim AS builder
 ARG SITE_BASE="/"
 ENV VITE_SITE_BASE=$SITE_BASE
 ARG GA_TRACKING_ID
@@ -17,7 +17,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Install dependencies
-RUN npm install 
+RUN npm ci
 
 # Copy source code into image
 COPY . .
@@ -26,13 +26,15 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Serve static site with nginx
-FROM nginx:alpine
+FROM nginxinc/nginx-unprivileged:alpine
 
 # Remove default nginx static files and copy in our own
+USER root
 RUN rm -rf /usr/share/nginx/html/*
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+USER 101
 
 # Expose port 80 and use nginx as entrypoint
 EXPOSE 80

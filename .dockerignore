@@ -1,0 +1,11 @@
+.git
+.github
+.husky
+.vscode
+.claude
+.env
+node_modules
+dist
+coverage
+CLAUDE.md
+SECURITY-FIX.md

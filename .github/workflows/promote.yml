@@ -1,11 +1,17 @@
 name: Promote Staging to Production
 
+permissions:
+    contents: read
+
 on:
     workflow_dispatch:
 
 jobs:
     promote:
         runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            deployments: write
         env:
             GH_TOKEN: ${{ github.token }}
         steps:
@@ -34,6 +40,9 @@ jobs:
                   ssh_host: ${{ secrets.deploy_target }}
                   ssh_port: ${{ secrets.deploy_port }}
 
+            # The server's deploy key runs a forced command, /usr/local/bin/ci-deploy,
+            # that allows only this exact command. Changing it needs a matching change
+            # to that wrapper, or the step fails with "ci-deploy: command not allowed".
             - name: Trigger promote script on server
               run: |
                   ssh -i ~/.ssh/id -p ${{ secrets.deploy_port }} \
