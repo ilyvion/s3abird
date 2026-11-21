@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Email bodies are shown in an isolated frame, so an email's styles and content can no longer change or cover the rest of the app. HTML emails are shown on a white background.
 - Form fields and buttons inside emails are removed.
 - The Docker image's web server sends a Content-Security-Policy. The page only runs its own scripts, only connects to AWS, cannot submit forms and cannot be embedded in other sites.
+- Updated all dependencies, including the HTML sanitizer and the email parser, to pick up their security and parsing fixes.
 
 ### Fixed
 

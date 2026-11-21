@@ -5,6 +5,7 @@ export default defineConfig({
     plugins: [vue()],
     test: {
         environment: 'node',
+        setupFiles: ['src/testSetup.ts'],
         coverage: {
             provider: 'v8',
             include: ['src/**/*.{ts,vue}'],
