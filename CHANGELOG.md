@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - A crafted link in a plain-text email could add styling to the page.
 - Emails saved in the browser's cache by an earlier version were shown without the current safety filtering. Every email is now filtered again each time it is displayed.
+- After a new version was deployed, a browser could load the app's page in place of a script or stylesheet that no longer exists and keep that broken copy for a year. Missing script, stylesheet, image and font files now return "not found" and are not cached.
 
 ## [0.5.1] - 2026-06-04
 
