@@ -47,6 +47,24 @@ Visit https://evil.com/" onmouseover="alert(1) for details.
             })
         })
 
+        it('does not let a quote in a linkified URL inject a style attribute', async () => {
+            const raw = `From: sender@example.com
+To: recipient@example.com
+Subject: Style injection test
+Content-Type: text/plain
+
+Visit http://x"style="position:fixed;inset:0 now.
+`
+            const result = await parse(raw, 'test-key')
+            const div = document.createElement('div')
+            div.innerHTML = result.textAsHtml
+            div.querySelectorAll('*').forEach((el) => {
+                expect(el.getAttribute('style')).toBeNull()
+            })
+            const link = div.querySelector('a')!
+            expect(link.getAttribute('href')).toBe('http://x"style="position:fixed;inset:0')
+        })
+
         it('sanitizes script tags in textAsHtml', async () => {
             const raw = `From: sender@example.com
 To: recipient@example.com
@@ -71,6 +89,46 @@ Content-Type: text/html
 `
             const result = await parse(rawHtml, 'test-key')
             expect(result.html).not.toContain('<script>')
+        })
+
+        const htmlEmail = (body: string) => `From: sender@example.com
+To: recipient@example.com
+Subject: Test
+Content-Type: text/html
+
+${body}
+`
+
+        // happy-dom's NodeIterator skips the nodes after one DOMPurify removes, so each
+        // forbidden tag is tested on its own as the last element of the body.
+        it.each([
+            ['form', '<form action="https://evil.example/collect" method="post"></form>'],
+            ['input', '<input type="password">'],
+            ['button', '<button>Send</button>'],
+            ['textarea', '<textarea>t</textarea>'],
+            ['select', '<select></select>'],
+            ['option', '<option>o</option>'],
+        ])('removes <%s> elements', async (tag, markup) => {
+            const result = await parse(htmlEmail(`<p>a</p>${markup}`), 'test-key')
+            const div = document.createElement('div')
+            div.innerHTML = result.html!
+            expect(div.querySelector(tag)).toBeNull()
+        })
+
+        it('removes id and name attributes but keeps style blocks', async () => {
+            const result = await parse(
+                htmlEmail(
+                    '<style>.a{color:red}</style><div id="app" class="a">x</div><a name="anchor" href="https://example.com">link</a>'
+                ),
+                'test-key'
+            )
+            const div = document.createElement('div')
+            div.innerHTML = result.html!
+            expect(div.querySelector('[id]')).toBeNull()
+            expect(div.querySelector('[name]')).toBeNull()
+            expect(div.querySelector('style')).not.toBeNull()
+            expect(div.querySelector('.a')).not.toBeNull()
+            expect(div.querySelector('a')?.getAttribute('href')).toBe('https://example.com')
         })
     })
 

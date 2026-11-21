@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Remote images in emails are blocked by default. A "Load remote images" button loads them for the message being read.
+
+### Changed
+
+- Email bodies are shown in an isolated frame, so an email's styles and content can no longer change or cover the rest of the app. HTML emails are shown on a white background.
+- Form fields and buttons inside emails are removed.
+
+### Fixed
+
+- A crafted link in a plain-text email could add styling to the page.
+
 ## [0.5.1] - 2026-06-04
 
 ### Changed

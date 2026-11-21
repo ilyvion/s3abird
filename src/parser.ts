@@ -1,8 +1,15 @@
-import createDOMPurify from 'dompurify'
+import createDOMPurify, { type Config } from 'dompurify'
 import PostalMime, { type Address, type Attachment, type Email, type RawEmail } from 'postal-mime'
 import { collapseBlockquotes } from './quoteCollapser.js'
 
 const DOMPurify = createDOMPurify(window)
+
+// Form controls and id/name attributes are removed from mail so a message cannot
+// present input fields or target elements by name.
+export const MAIL_PURIFY_CONFIG: Config = {
+    FORBID_TAGS: ['form', 'input', 'button', 'textarea', 'select', 'option'],
+    FORBID_ATTR: ['id', 'name'],
+}
 
 export type ParsedEmail = Email & {
     textAsHtml: string
@@ -83,7 +90,7 @@ export default async function (email: RawEmail, emailKey: string): Promise<Parse
 
             extended.html = extended.html.replace(cidRegex, dataUri)
         }
-        extended.html = DOMPurify.sanitize(extended.html)
+        extended.html = DOMPurify.sanitize(extended.html, MAIL_PURIFY_CONFIG)
     }
 
     extended.processedHtml = collapseBlockquotes(extended.html || extended.textAsHtml)
@@ -128,7 +135,12 @@ export function attachmentToBase64(att: Attachment): string {
 }
 
 const escape = (str: string) =>
-    str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
 
 const linkify = (str: string) =>
     str.replace(

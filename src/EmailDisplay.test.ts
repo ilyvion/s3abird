@@ -1,8 +1,26 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import EmailDisplay from './EmailDisplay.vue'
 import type { ParsedEmail } from './parser.js'
+import { FRAME_TEXT_COLOR_VAR, buildFrameCsp } from './emailFrame.js'
+import { useThemeStore } from './stores/theme.js'
+
+beforeEach(() => {
+    setActivePinia(createPinia())
+})
+
+function frameDocOf(wrapper: ReturnType<typeof mount>): Document {
+    const srcdoc = wrapper.find('iframe').attributes('srcdoc') ?? ''
+    return new DOMParser().parseFromString(srcdoc, 'text/html')
+}
+
+function frameCspOf(wrapper: ReturnType<typeof mount>): string | null | undefined {
+    return frameDocOf(wrapper)
+        .querySelector('meta[http-equiv="Content-Security-Policy"]')
+        ?.getAttribute('content')
+}
 
 function makeEmail(overrides: Partial<ParsedEmail> = {}): ParsedEmail {
     const base = {
@@ -23,12 +41,74 @@ function makeEmail(overrides: Partial<ParsedEmail> = {}): ParsedEmail {
 const stubs = { EmailAddress: true }
 
 describe('EmailDisplay', () => {
-    it('renders the email body HTML', () => {
+    it('renders the email body inside the frame document', () => {
         const wrapper = mount(EmailDisplay, {
             props: { email: makeEmail({ textAsHtml: '<p>hello world</p>' }) },
             global: { stubs },
         })
-        expect(wrapper.html()).toContain('hello world')
+        expect(frameDocOf(wrapper).body.innerHTML).toBe('<p>hello world</p>')
+    })
+
+    it('renders the body in a sandboxed frame that cannot run scripts or submit forms', () => {
+        const wrapper = mount(EmailDisplay, {
+            props: { email: makeEmail() },
+            global: { stubs },
+        })
+        const tokens = (wrapper.find('iframe').attributes('sandbox') ?? '').split(/\s+/).sort()
+        expect(tokens).toEqual([
+            'allow-popups',
+            'allow-popups-to-escape-sandbox',
+            'allow-same-origin',
+        ])
+    })
+
+    it('keeps email markup out of the app document', () => {
+        const html =
+            '<style>body{display:none}</style><div class="fixed-overlay" style="position:fixed">x</div>'
+        const wrapper = mount(EmailDisplay, {
+            props: { email: makeEmail({ html, processedHtml: html }) },
+            global: { stubs },
+        })
+        expect(wrapper.element.querySelector('style')).toBeNull()
+        expect(wrapper.element.querySelector('.fixed-overlay')).toBeNull()
+        expect(frameDocOf(wrapper).querySelector('.fixed-overlay')).not.toBeNull()
+    })
+
+    it('blocks remote images until the reader loads them', async () => {
+        const html = '<img src="https://tracker.example/p.gif">'
+        const wrapper = mount(EmailDisplay, {
+            props: { email: makeEmail({ html, processedHtml: html }) },
+            global: { stubs },
+        })
+        expect(frameCspOf(wrapper)).toBe(buildFrameCsp(false))
+
+        const button = wrapper.findAll('button').find((b) => b.text() === 'Load remote images')!
+        await button.trigger('click')
+
+        expect(frameCspOf(wrapper)).toBe(buildFrameCsp(true))
+        expect(wrapper.text()).not.toContain('Load remote images')
+    })
+
+    it('blocks remote images again when a different email is shown', async () => {
+        const html = '<img src="https://tracker.example/p.gif">'
+        const wrapper = mount(EmailDisplay, {
+            props: { email: makeEmail({ html, processedHtml: html }) },
+            global: { stubs },
+        })
+        const button = wrapper.findAll('button').find((b) => b.text() === 'Load remote images')!
+        await button.trigger('click')
+        await wrapper.setProps({ email: makeEmail({ key: 'other', html, processedHtml: html }) })
+
+        expect(frameCspOf(wrapper)).toBe(buildFrameCsp(false))
+    })
+
+    it('does not offer to load remote images when there are none', () => {
+        const wrapper = mount(EmailDisplay, {
+            props: { email: makeEmail() },
+            global: { stubs },
+        })
+        expect(wrapper.text()).not.toContain('Load remote images')
+        expect(frameCspOf(wrapper)).toBe(buildFrameCsp(false))
     })
 
     it('sorts headers alphabetically without mutating the stored array', () => {
@@ -137,6 +217,55 @@ describe('EmailDisplay', () => {
         expect(revokeObjectURL).toHaveBeenCalledWith('blob:test-url')
 
         vi.restoreAllMocks()
+    })
+})
+
+describe('EmailDisplay frame theming', () => {
+    async function mountInColoredContainer(email: ParsedEmail) {
+        const container = document.createElement('div')
+        container.style.color = 'rgb(1, 2, 3)'
+        document.body.appendChild(container)
+        const wrapper = mount(EmailDisplay, {
+            props: { email },
+            global: { stubs },
+            attachTo: container,
+        })
+        const iframe = wrapper.find('iframe').element as HTMLIFrameElement
+        await new Promise<void>((resolve) => iframe.addEventListener('load', () => resolve()))
+        return { wrapper, container, iframe }
+    }
+
+    it('passes the app text color into a plain-text frame', async () => {
+        const { wrapper, container, iframe } = await mountInColoredContainer(makeEmail())
+        expect(
+            iframe.contentDocument!.documentElement.style.getPropertyValue(FRAME_TEXT_COLOR_VAR)
+        ).toBe('rgb(1, 2, 3)')
+        wrapper.unmount()
+        container.remove()
+    })
+
+    it('updates the frame text color when the theme changes', async () => {
+        const { wrapper, container, iframe } = await mountInColoredContainer(makeEmail())
+        container.style.color = 'rgb(4, 5, 6)'
+        useThemeStore().updateTheme(useThemeStore().effectiveTheme === 'dark' ? 'light' : 'dark')
+        await flushPromises()
+        expect(
+            iframe.contentDocument!.documentElement.style.getPropertyValue(FRAME_TEXT_COLOR_VAR)
+        ).toBe('rgb(4, 5, 6)')
+        wrapper.unmount()
+        container.remove()
+    })
+
+    it('does not apply the app text color to HTML mail', async () => {
+        const html = '<p>newsletter</p>'
+        const { wrapper, container, iframe } = await mountInColoredContainer(
+            makeEmail({ html, processedHtml: html })
+        )
+        expect(
+            iframe.contentDocument!.documentElement.style.getPropertyValue(FRAME_TEXT_COLOR_VAR)
+        ).toBe('')
+        wrapper.unmount()
+        container.remove()
     })
 })
 
