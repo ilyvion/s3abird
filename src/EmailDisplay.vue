@@ -72,7 +72,12 @@
 <script lang="ts" setup>
 import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import { type Attachment } from 'postal-mime'
-import { type ParsedEmail, attachmentToBase64, isInlineAttachment } from './parser.js'
+import {
+    type ParsedEmail,
+    attachmentToBase64,
+    isInlineAttachment,
+    sanitizeMailHtml,
+} from './parser.js'
 import { FRAME_TEXT_COLOR_VAR, buildEmailFrameDocument, hasRemoteContent } from './emailFrame.js'
 import { useEffectiveTheme } from './composables/useEffectiveTheme.js'
 import EmailAddress from './EmailAddress.vue'
@@ -88,10 +93,13 @@ const frameHeight = ref(0)
 const remoteContentAllowed = ref(false)
 
 const plainText = computed(() => !props.email.html)
-const remoteContentPresent = computed(() => hasRemoteContent(props.email.processedHtml))
+// processedHtml was restructured after sanitizing and may come from a cache written by an
+// older build, so it is sanitized again immediately before rendering.
+const bodyHtml = computed(() => sanitizeMailHtml(props.email.processedHtml))
+const remoteContentPresent = computed(() => hasRemoteContent(bodyHtml.value))
 
 const frameDocument = computed(() =>
-    buildEmailFrameDocument(props.email.processedHtml, {
+    buildEmailFrameDocument(bodyHtml.value, {
         allowRemoteContent: remoteContentAllowed.value,
         plainText: plainText.value,
     })

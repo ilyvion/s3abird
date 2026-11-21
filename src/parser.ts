@@ -11,6 +11,11 @@ export const MAIL_PURIFY_CONFIG: Config = {
     FORBID_ATTR: ['id', 'name'],
 }
 
+/** Sanitizes mail HTML for rendering; run on the final markup, after any restructuring or caching. */
+export function sanitizeMailHtml(html: string): string {
+    return DOMPurify.sanitize(html, MAIL_PURIFY_CONFIG)
+}
+
 export type ParsedEmail = Email & {
     textAsHtml: string
     processedHtml: string
@@ -90,7 +95,7 @@ export default async function (email: RawEmail, emailKey: string): Promise<Parse
 
             extended.html = extended.html.replace(cidRegex, dataUri)
         }
-        extended.html = DOMPurify.sanitize(extended.html, MAIL_PURIFY_CONFIG)
+        extended.html = sanitizeMailHtml(extended.html)
     }
 
     extended.processedHtml = collapseBlockquotes(extended.html || extended.textAsHtml)

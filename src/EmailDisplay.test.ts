@@ -74,6 +74,47 @@ describe('EmailDisplay', () => {
         expect(frameDocOf(wrapper).querySelector('.fixed-overlay')).not.toBeNull()
     })
 
+    // processedHtml may come from a cache written by an older build, so the component must not
+    // rely on it having been sanitized. happy-dom's NodeIterator skips the nodes after one
+    // DOMPurify removes, so each case puts the unsafe markup last.
+    it.each([
+        ['<script>', '<script>alert(1)</script>', 'script'],
+        ['event handlers', '<img src="data:," onerror="alert(1)">', '[onerror]'],
+        ['<form>', '<form action="https://evil.example/collect"></form>', 'form'],
+        ['<input>', '<input type="password">', 'input'],
+        ['id attributes', '<div id="app">x</div>', '[id]'],
+        ['name attributes', '<a name="anchor" href="https://example.com">x</a>', '[name]'],
+    ])('sanitizes unsafe %s in the body at render time', (_label, markup, selector) => {
+        const processedHtml = `<p>keep</p>${markup}`
+        const wrapper = mount(EmailDisplay, {
+            props: { email: makeEmail({ html: processedHtml, processedHtml }) },
+            global: { stubs },
+        })
+        const body = frameDocOf(wrapper).body
+        expect(body.querySelector('p')?.textContent).toBe('keep')
+        expect(body.querySelector(selector)).toBeNull()
+    })
+
+    it('keeps collapsed quotes and plain-text links intact through render-time sanitizing', () => {
+        const processedHtml =
+            '<p><a href="https://example.com" rel="noopener noreferrer">link</a></p>' +
+            '<details class="mt-2"><summary>··· Show quoted text</summary><blockquote><p>old</p></blockquote></details>'
+        const wrapper = mount(EmailDisplay, {
+            props: { email: makeEmail({ textAsHtml: processedHtml, processedHtml }) },
+            global: { stubs },
+        })
+        expect(frameDocOf(wrapper).body.innerHTML).toBe(processedHtml)
+    })
+
+    it('does not offer remote images that render-time sanitizing removes', () => {
+        const processedHtml = '<script src="https://tracker.example/x.js"></script><p>hi</p>'
+        const wrapper = mount(EmailDisplay, {
+            props: { email: makeEmail({ html: processedHtml, processedHtml }) },
+            global: { stubs },
+        })
+        expect(wrapper.text()).not.toContain('Load remote images')
+    })
+
     it('blocks remote images until the reader loads them', async () => {
         const html = '<img src="https://tracker.example/p.gif">'
         const wrapper = mount(EmailDisplay, {

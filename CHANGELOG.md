@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - A crafted link in a plain-text email could add styling to the page.
+- Emails saved in the browser's cache by an earlier version were shown without the current safety filtering. Every email is now filtered again each time it is displayed.
 
 ## [0.5.1] - 2026-06-04
 
