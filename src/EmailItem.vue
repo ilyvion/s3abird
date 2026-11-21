@@ -15,9 +15,11 @@ import EmailDisplay from './EmailDisplay.vue'
 import { useEmailLoader } from './composables/useEmailLoader.js'
 import { useKeyboardShortcutsModal } from './composables/useKeyboardShortcutsModal.js'
 
-const props = defineProps<{
+interface Props {
     messageId: string
-}>()
+}
+
+const props = defineProps<Props>()
 
 const router = useRouter()
 const { showShortcutsModal } = useKeyboardShortcutsModal()
